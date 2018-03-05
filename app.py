@@ -37,7 +37,7 @@ def add_trial():
             os.makedirs(UPLOAD_FOLDER)
 
         # Save the file.
-        with open(filepath, "w") as new_file:
+        with open(filepath, "wb") as new_file:
             shutil.copyfileobj(file, new_file)
 
         return "POST success!"
