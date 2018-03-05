@@ -28,10 +28,15 @@ def add_trial():
         if not allowed_file(file.filename):
             return json_error("File must have a .txt extension.", "The trial file must be a plain text file.")
 
-        # Save the file.
+        # Create a name for the file.
         filepath = os.path.join(UPLOAD_FOLDER, "U{}_{}.txt".
                                 format(request.form["user_id"], request.form["activity_name"]))
 
+        # Ensure the parent directory is created.
+        if not os.path.exists(UPLOAD_FOLDER):
+            os.makedirs(UPLOAD_FOLDER)
+
+        # Save the file.
         with open(filepath, "w") as new_file:
             shutil.copyfileobj(file, new_file)
 
