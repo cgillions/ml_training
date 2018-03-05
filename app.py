@@ -1,4 +1,5 @@
 import os
+import shutil
 from flask import Flask, request, jsonify, redirect, url_for
 
 app = Flask(__name__)
@@ -28,7 +29,11 @@ def add_trial():
             return json_error("File must have a .txt extension.", "The trial file must be a plain text file.")
 
         # Save the file.
-        file.save(os.path.join(UPLOAD_FOLDER, "U{}_{}".format(request.form["user_id"], request.form["activity_name"])))
+        filepath = os.path.join(UPLOAD_FOLDER, "U{}_{}.txt".
+                                format(request.form["user_id"], request.form["activity_name"]))
+
+        with open(filepath, "w") as new_file:
+            shutil.copyfileobj(file, new_file)
 
         return "POST success!"
 
