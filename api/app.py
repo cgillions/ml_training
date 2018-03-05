@@ -30,6 +30,11 @@ def add_trial():
         # Save the file.
         file.save(os.path.join(UPLOAD_FOLDER, "U{}_{}".format(request.form["user_id"], request.form["activity_name"])))
 
+        return "POST success!"
+
+    if request.method == "GET":
+        return "GET success!"
+
 
 # Function to verify if a file has a txt extension.
 def allowed_file(filename):
