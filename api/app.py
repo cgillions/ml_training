@@ -1,15 +1,15 @@
 import os
 from flask import Flask, request, jsonify, redirect, url_for
-from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = "../data/trials"
+UPLOAD_FOLDER = "../data/trials"
 ALLOWED_EXTENSIONS = {"txt"}
 
 
 @app.route("/trials/add", methods=["GET", "POST"])
 def add_trial():
     if request.method == "POST":
+        # Validate the POST form parameters.
         if "user_id" not in request.form:
             return json_error("user_id is required.", "We need a user ID to link the trial to.")
 
@@ -19,6 +19,16 @@ def add_trial():
         if "file" not in request.files:
             return json_error("file is required.", "There was no file associated with the request. "
                                                    "The file should contain the raw accelerometer data.")
+
+        # Get the file from the request.
+        file = request.files["file"]
+
+        # Check it's extension.
+        if not allowed_file(file.filename):
+            return json_error("File must have a .txt extension.", "The trial file must be a plain text file.")
+
+        # Save the file.
+        file.save(os.path.join(UPLOAD_FOLDER, "U{}_{}".format(request.form["user_id"], request.form["activity_name"])))
 
 
 # Function to verify if a file has a txt extension.
