@@ -2,7 +2,7 @@ import os
 from flask import Flask, request, jsonify, redirect, url_for
 
 app = Flask(__name__)
-UPLOAD_FOLDER = "../data/trials"
+UPLOAD_FOLDER = "data/trials"
 ALLOWED_EXTENSIONS = {"txt"}
 
 
