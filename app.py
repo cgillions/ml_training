@@ -52,8 +52,7 @@ def get_trials():
         trials = os.listdir(UPLOAD_FOLDER)
     else:
         trials = []
-    return trials
-
+    return jsonify(trials)
 
 
 # Function to verify if a file has a txt extension.
