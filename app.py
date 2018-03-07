@@ -46,6 +46,16 @@ def add_trial():
         return "GET success!"
 
 
+@app.route("/trials/get", methods=["GET"])
+def get_trials():
+    if os.path.exists(UPLOAD_FOLDER):
+        trials = os.listdir(UPLOAD_FOLDER)
+    else:
+        trials = []
+    return trials
+
+
+
 # Function to verify if a file has a txt extension.
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
