@@ -1,6 +1,6 @@
 from model.target import Target
 from model.activity import name_id_map
-from utils.db_utils import get_database, json_error, get_attributes
+from utils.db_utils import get_database, json_error
 
 
 class Trial(object):
@@ -57,7 +57,7 @@ class Trial(object):
         # Store the data in the database.
         database_conn = get_database()
         cursor = database_conn.cursor()
-        cursor.execute("INSERT INTO public.\"Trial\" (user_id, filename, data) VALUES (%s, %s, %s) RETURNING id",
+        cursor.execute("INSERT INTO public.\"Trial\" (user_id, filename, data) VALUES (%s, %s, %s) RETURNING id;",
                        (user_id, data_file.filename, ba))
 
         # Loop through the response (1 id).
@@ -68,7 +68,7 @@ class Trial(object):
 
             # Make an entry for each target.
             for target in targets:
-                cursor.execute("INSERT INTO public.\"Target\" (trial_id, activity_id) VALUES (%s, %s)",
+                cursor.execute("INSERT INTO public.\"Target\" (trial_id, activity_id) VALUES (%s, %s);",
                                (idx, target))
 
         # Close the connections.
