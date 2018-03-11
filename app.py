@@ -12,12 +12,17 @@ def get_database():
 
 
 @app.route("/trials", methods=["GET", "POST"])
-def add_trial():
+def trials():
     if request.method == "POST":
         return Trial.post(request.form["user_id"], request.files["file"], request.form["user_id"])
 
     else:  # if request.method == "GET":
         return jsonify(Trial.get())
+
+
+@app.route("/activities", methods=["GET"])
+def activities():
+    return jsonify(Activity.get())
 
 
 def json_error(error, detail):
@@ -32,4 +37,7 @@ def json_error(error, detail):
 if __name__ == "__main__":
     app.run(debug=True, use_debugger=False, use_reloader=False)
 
+
+# Avoid circular dependencies.
 from model.trial import Trial
+from model.activity import Activity
