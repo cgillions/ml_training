@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from flask import Flask, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify
 from model.trial import Trial
 
 app = Flask(__name__)
@@ -12,7 +12,7 @@ def get_database():
     return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
-@app.route("/trials/add", methods=["GET", "POST"])
+@app.route("/trials", methods=["GET", "POST"])
 def add_trial():
     if request.method == "POST":
         return Trial.post(request.form["user_id"], request.files["file"], request.form["user_id"])
