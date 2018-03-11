@@ -60,16 +60,16 @@ class Trial(object):
         cursor.execute("INSERT INTO public.\"Trial\" (user_id, filename, data) VALUES (%s, %s, %s) RETURNING id;",
                        (user_id, data_file.filename, ba))
 
-        # Loop through the response (1 id).
-        for idx in cursor.fetchall():
-            idx = idx[0]
-            # Get the targets for the activity.
-            targets = Target.get_targets(activity_name)
+        # Get the ID of the new trial.
+        idx = cursor.fetchone()[0]
 
-            # Make an entry for each target.
-            for target in targets:
-                cursor.execute("INSERT INTO public.\"Target\" (trial_id, activity_id) VALUES (%s, %s);",
-                               (idx, target))
+        # Get the targets for the activity.
+        targets = Target.get_targets(activity_name)
+
+        # Make an entry for each target.
+        for target in targets:
+            cursor.execute("INSERT INTO public.\"Target\" (trial_id, activity_id) VALUES (%s, %s);",
+                           (idx, target))
 
         # Close the connections.
         cursor.close()
