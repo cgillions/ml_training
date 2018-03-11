@@ -11,7 +11,7 @@ def trials():
         return Trial.post(request.form["user_id"], request.files["file"], request.form["activity_name"])
 
     else:  # if request.method == "GET":
-        return jsonify(Trial.get())
+        return jsonify({"trials": Trial.get()})
 
 
 @app.route("/activities", methods=["GET"])

@@ -1,6 +1,6 @@
 from model.target import Target
 from model.activity import name_id_map
-from utils.db_utils import get_database, json_error
+from utils.db_utils import get_database, json_error, get_attributes
 
 
 class Trial(object):
@@ -32,7 +32,8 @@ class Trial(object):
         cursor.execute("SELECT (id, user_id, filename, data) FROM public.\"Trial\";")
 
         for trial in cursor:
-            trials.append(Trial(trial[0], trial[1], trial[2], trial[3]).serialize())
+            attrs = get_attributes(trial[0])
+            trials.append(Trial(attrs[0], attrs[1], attrs[2], attrs[3]).serialize())
 
         cursor.close()
         database_conn.close()
@@ -60,6 +61,9 @@ class Trial(object):
         cursor.execute("INSERT INTO public.\"Trial\" (user_id, filename, data) VALUES (%s, %s, %s) RETURNING id;",
                        (user_id, data_file.filename, ba))
 
+        # Commit the transaction.
+        database_conn.commit()
+
         # Get the ID of the new trial.
         idx = cursor.fetchone()[0]
 
@@ -72,6 +76,7 @@ class Trial(object):
                            (idx, target))
 
         # Close the connections.
+        database_conn.commit()
         cursor.close()
         database_conn.close()
 
