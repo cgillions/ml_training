@@ -26,6 +26,7 @@ class Trial(object):
 
         cursor.close()
         database_conn.close()
+        return trials
 
     @staticmethod
     def post(user_id, data_file, activity_id):
