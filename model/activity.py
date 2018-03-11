@@ -1,4 +1,4 @@
-from app import get_database
+from utils.db_utils import get_database, get_attributes
 
 
 name_id_map = {
@@ -34,15 +34,23 @@ class Activity(object):
         self.name = name
         self.id = idx
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
+
     @staticmethod
     def get():
         activities = []
         database_conn = get_database()
         cursor = database_conn.cursor()
-        cursor.execute("SELECT (id, name) FROM public.\"Activity\";")
+        cursor.execute("SELECT (id, name) FROM public.\"Activity\" ORDER BY id ASC;")
 
         for activity in cursor:
-            activities.append(Activity(activity[0], activity[1]))
+            attrs = get_attributes(activity[0])
+            activities.append(Activity(attrs[0], attrs[1]).serialize())
 
         cursor.close()
         database_conn.close()
+        return activities
