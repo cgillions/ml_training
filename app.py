@@ -1,22 +1,18 @@
-from flask import Flask, request, jsonify
-from model.activity import Activity
-from model.trial import Trial
+from controller.ActivityController import activity_endpoint
+from controller.TrialController import trial_endpoint
+from flask import Flask
 
 app = Flask(__name__)
 
 
-@app.route("/trials", methods=["GET", "POST"])
-def trials():
-    if request.method == "POST":
-        return Trial.post(request.form["user_id"], request.files["file"], request.form["activity_name"])
-
-    else:  # if request.method == "GET":
-        return jsonify({"trials": Trial.get()})
-
-
 @app.route("/activities", methods=["GET"])
 def activities():
-    return jsonify({"activities": Activity.get()})
+    return activity_endpoint()
+
+
+@app.route("/trials", methods=["GET", "POST"])
+def trials():
+    return trial_endpoint()
 
 
 if __name__ == "__main__":
