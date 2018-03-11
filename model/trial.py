@@ -1,6 +1,6 @@
-from app import get_database, json_error
 from model.target import Target
 from model.activity import name_id_map
+from app import get_database, json_error
 
 
 class Trial(object):

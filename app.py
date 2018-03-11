@@ -1,7 +1,6 @@
 import os
 import psycopg2
 from flask import Flask, request, jsonify
-from model.trial import Trial
 
 app = Flask(__name__)
 DATABASE_URL = os.environ["DATABASE_URL"]
@@ -32,3 +31,5 @@ def json_error(error, detail):
 
 if __name__ == "__main__":
     app.run(debug=True, use_debugger=False, use_reloader=False)
+
+from model.trial import Trial
