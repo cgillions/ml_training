@@ -2,22 +2,17 @@ from utils.db_utils import get_database, get_attributes
 from utils.response_utils import error, success
 from model.target import Target
 from model.trial import Trial
-from flask import request, jsonify
-
-
-def trial_endpoint():
-    if request.method == "POST":
-        return post(request.form["user_id"], request.files["file"], request.form["activity_name"])
-
-    else:
-        return jsonify({"trials": get()})
+from flask import jsonify
 
 
 def get():
     trials = []
     database_conn = get_database()
     cursor = database_conn.cursor()
-    cursor.execute("SELECT (id, user_id, filename, data) FROM public.\"Trial\";")
+    cursor.execute("""
+                    SELECT (id, user_id, filename, data) 
+                    FROM public."Trial";
+                    """)
 
     for trial in cursor:
         attrs = get_attributes(trial[0])
@@ -25,13 +20,13 @@ def get():
 
     cursor.close()
     database_conn.close()
-    return trials
+    return jsonify({"trials": trials})
 
 
-def post(user_id, data_file, activity_name):
+def post(participant_id, data_file, activity_name):
     # Validate the input.
-    if user_id is None:
-        return error("user_id is required.", "We need a user ID to link the trial to.")
+    if participant_id is None:
+        return error("participant_id is required.", "We need a participant ID to link the trial to.")
 
     if activity_name is None:
         return error("activity_name is required.", "We need to know the activity so that we can train the AI.")
@@ -46,8 +41,13 @@ def post(user_id, data_file, activity_name):
     # Store the data in the database.
     database_conn = get_database()
     cursor = database_conn.cursor()
-    cursor.execute("INSERT INTO public.\"Trial\" (user_id, filename, data) VALUES (%s, %s, %s) RETURNING id;",
-                   (user_id, data_file.filename, ba))
+    cursor.execute("""
+                    INSERT INTO 
+                    public."Trial" 
+                    (participant_id, filename, data) 
+                    VALUES (%s, %s, %s) 
+                    RETURNING id;
+                    """, (participant_id, data_file.filename, ba))
 
     # Commit the transaction.
     database_conn.commit()
@@ -60,15 +60,21 @@ def post(user_id, data_file, activity_name):
 
     # Make an entry for each target.
     for target in targets:
-        cursor.execute("INSERT INTO public.\"Target\" (trial_id, activity_id) VALUES (%s, %s);",
-                       (idx, target))
+        cursor.execute("""
+                        INSERT INTO 
+                        public."Target" 
+                        (trial_id, activity_id) 
+                        VALUES (%s, %s);
+                        """, (idx, target))
+
+    # Commit the transaction.
+    database_conn.commit()
 
     # Close the connections.
-    database_conn.commit()
     cursor.close()
     database_conn.close()
 
-    return success("Trial added for user: {}, activity: {}.".format(user_id, activity_name))
+    return success("Trial added for participant: {}, activity: {}.".format(participant_id, activity_name))
 
 
 # Function to verify if a file has a txt extension.

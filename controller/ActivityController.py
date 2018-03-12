@@ -3,10 +3,6 @@ from model.activity import Activity
 from flask import jsonify
 
 
-def activity_endpoint():
-    return jsonify({"activities": get()})
-
-
 def get():
     activities = []
     database_conn = get_database()
@@ -19,4 +15,4 @@ def get():
 
     cursor.close()
     database_conn.close()
-    return activities
+    return jsonify({"activities": activities})

@@ -1,15 +1,7 @@
-from model.featureset1 import Featureset1
 from utils.db_utils import get_database, get_attributes
 from utils.response_utils import error, success
-from flask import request, jsonify
-
-
-def featureset1_endpoint():
-    if request.method == "POST":
-        return post(request.files["file"])
-
-    else:
-        return jsonify({"features": get()})
+from model.featureset1 import Featureset1
+from flask import jsonify
 
 
 def post(file):
@@ -76,7 +68,10 @@ def get():
     features = []
     database_conn = get_database()
     cursor = database_conn.cursor()
-    cursor.execute("SELECT (id, \"meanXYZ\", \"stdXYZ\") FROM public.\"Featureset_1\";")
+    cursor.execute("""
+                    SELECT (id, "meanXYZ", "stdXYZ") 
+                    FROM public."Featureset_1";
+                    """)
 
     for feature in cursor:
         attrs = get_attributes(feature[0])
@@ -84,7 +79,7 @@ def get():
 
     cursor.close()
     database_conn.close()
-    return features
+    return jsonify({"features": features})
 
 
 # Function to remove any files added to the database before an error occurred.
@@ -92,7 +87,7 @@ def remove_files(database_conn, cursor, feature_ids, target_ids):
     cursor.execute("""
                     DELETE FROM 
                     public."Featureset_1" 
-                    WHERE id=(%s);
+                    WHERE id IN (%s);
                     """, (",".join(feature_ids)))
 
     for idx, target in zip(feature_ids, target_ids):
