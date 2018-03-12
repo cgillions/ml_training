@@ -7,7 +7,11 @@ def get():
     activities = []
     database_conn = get_database()
     cursor = database_conn.cursor()
-    cursor.execute("SELECT (id, name) FROM public.\"Activity\" ORDER BY id ASC;")
+    cursor.execute("""
+                    SELECT id, name 
+                    FROM public."Activity" 
+                    ORDER BY id ASC;
+                    """)
 
     for activity in cursor:
         attrs = get_attributes(activity[0])

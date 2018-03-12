@@ -4,7 +4,7 @@ import controller.TrialController as TrialController
 import controller.UserController as UserController
 from flask import Flask, request
 from model.user import User
-
+from utils.response_utils import error
 
 app = Flask(__name__)
 
@@ -30,18 +30,37 @@ def trials():
 
     # Handle the trial response.
     if request.method == "POST":
-        return TrialController.post(
+        if result.role != "admin":
+            return error("Permission denied", "You must have administrator rights to upload trials.")
+        else:
+            return TrialController.post(
                     request.form.get("participant_id"),
                     request.files.get("file"),
                     request.form.get("activity_name"))
     else:
-        return TrialController.get()
+        if request.headers.get("auth_token") is None:
+            return TrialController.get(result)
+        else:
+            return TrialController.get(None)
 
 
 @app.route("/featureset1", methods=["GET", "POST"])
 def featureset():
+    # This requires a valid user.
+    result = UserController.login(
+        request.headers.get("auth_token"),
+        request.headers.get("username"),
+        request.headers.get("password"))
+
+    # If not a user, return the error.
+    if not isinstance(result, User):
+        return result
+
     if request.method == "POST":
-        return Featureset1Controller.post(request.files.get("file"))
+        if result.role != "admin":
+            return error("Permission denied", "You must have administrator rights to upload features.")
+        else:
+            return Featureset1Controller.post(request.files.get("file"))
     else:
         return Featureset1Controller.get()
 

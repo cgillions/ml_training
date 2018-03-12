@@ -1,7 +1,7 @@
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from utils.response_utils import error, success
-from utils.db_utils import get_database, get_attributes
+from utils.db_utils import get_database
 from model.user import User
 from flask import request
 from uuid import uuid4
@@ -49,33 +49,44 @@ def login(auth_token, username=None, password=None):
     if not is_authenticated(auth_token):
 
         # Ensure there is a valid username.
-        valid = validate_username(username)
-        if valid is not True:
-            return valid
+        if username is None:
+            return error("Username not provided.", "A username must be included in the header.")
+
+        if not isinstance(username, str):
+            return error("Username is not valid.", "A username must be constituted of text and numbers.")
 
         # Check the password validity.
         valid = validate_password(password)
         if valid is not True:
             return valid
 
-        # There's a valid password. Does it match the users?
+        # There's a valid password.
         database_conn = get_database()
         cursor = database_conn.cursor()
 
+        # Get the id and password of the user.
         cursor.execute("""
-                        SELECT (id, password)
+                        SELECT id, password, role
                         FROM public."User"
                         WHERE username=(%s);
                         """, (username,))
-
         attrs = cursor.fetchone()
+
+        # Check if there is a user with that username.
         if attrs is None:
+            cursor.close()
+            database_conn.close()
             return error("User doesn't exist.", "No user exists with that username. You should register an account.")
 
-        [idx, hashed_pwd] = attrs
+        idx = attrs[0]
+        hashed_pwd = attrs[1]
+        role = attrs[2]
 
+        # Verify the passwords match.
         try:
             PasswordHasher().verify(hashed_pwd, password)
+
+        # Handle the passwords not matching.
         except VerifyMismatchError:
             cursor.close()
             database_conn.close()
@@ -86,12 +97,12 @@ def login(auth_token, username=None, password=None):
 
         # Store the auth token.
         cursor.execute("""
-                        INSERT INTO 
+                        UPDATE
                         public."User"
-                        (auth_token, auth_expiry)
-                        VALUES (%s, %s)
-                        WHERE id=(%s);
-                        """, auth_token, expiry, idx)
+                        SET auth_token = %s, 
+                            auth_expiry = %s
+                        WHERE id = %s;
+                        """, (auth_token, expiry, idx))
 
         # Commit the transaction.
         database_conn.commit()
@@ -101,21 +112,20 @@ def login(auth_token, username=None, password=None):
         database_conn.close()
 
         # Return the logged in user.
-        return User(idx, username, auth_token)
+        return User(idx, username, auth_token, role)
 
     # The user is authenticated. Update the expiry date.
-    auth_token, expiry = get_auth_token()
+    ignore, expiry = get_auth_token()
 
     database_conn = get_database()
     cursor = database_conn.cursor()
 
     cursor.execute("""
-                    INSERT INTO
+                    UPDATE
                     public."User"
-                    (auth_expiry)
-                    VALUES (%s)
+                    SET auth_expiry = %s
                     WHERE auth_token=(%s)
-                    RETURNING id, username;
+                    RETURNING id, username, role;
                     """, (expiry, auth_token))
 
     # Commit the transaction.
@@ -125,7 +135,7 @@ def login(auth_token, username=None, password=None):
     cursor.close()
     database_conn.close()
 
-    return User(attrs[0], attrs[1], auth_token)
+    return User(attrs[0], attrs[1], auth_token, attrs[2])
 
 
 def is_authenticated(auth_token):
@@ -138,8 +148,8 @@ def is_authenticated(auth_token):
     cursor.execute("""
                     SELECT COUNT(*)
                     FROM public."User"
-                    WHERE auth_token=(%s)
-                    AND auth_expiry > (%s);
+                    WHERE auth_token=%s
+                    AND auth_expiry > %s;
                     """, (auth_token, time()))
     count = cursor.fetchone()[0]
 
@@ -159,18 +169,16 @@ def create_user(username, password, role):
                     public."User"
                     (username, password, role, auth_token, auth_expiry)
                     VALUES (%s, %s, %s, %s, %s)
-                    RETURNING (id, username);
+                    RETURNING id, username;
                     """, (username, PasswordHasher().hash(password), role, auth_token, auth_expiry))
 
     # Commit the transaction.
     database_conn.commit()
 
     # Close connections.
-    attrs = cursor.fetchone()
+    attrs = cursor.fetchone()[0]
     cursor.close()
     database_conn.close()
-
-    attrs = get_attributes(attrs[0])
 
     # Return the user object.
     return User(attrs[0], attrs[1], auth_token)
@@ -205,7 +213,7 @@ def validate_username(username):
     database_conn.close()
 
     if count is not 0:
-        return error("Username already exists.", "A user with the username {} already exists.")
+        return error("Username already exists.", "A user with the username {} already exists.".format(username))
 
     return True
 

@@ -1,26 +1,30 @@
-from utils.db_utils import get_database, get_attributes
+from utils.db_utils import get_database
 from utils.response_utils import error, success
 from model.target import Target
 from model.trial import Trial
 from flask import jsonify
 
 
-def get():
+def get(user):
     trials = []
     database_conn = get_database()
     cursor = database_conn.cursor()
     cursor.execute("""
-                    SELECT (id, user_id, filename, data) 
+                    SELECT id, participant_id, filename, data
                     FROM public."Trial";
                     """)
 
     for trial in cursor:
-        attrs = get_attributes(trial[0])
+        attrs = trial[0]
         trials.append(Trial(attrs[0], attrs[1], attrs[2], attrs[3]).__dict__)
 
     cursor.close()
     database_conn.close()
-    return jsonify({"trials": trials})
+
+    if user is None:
+        return jsonify({"trials": trials})
+    else:
+        return jsonify({"trials": trials, "user": user.__dict__})
 
 
 def post(participant_id, data_file, activity_name):
