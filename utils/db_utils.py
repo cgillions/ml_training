@@ -1,4 +1,3 @@
-from flask import jsonify
 import psycopg2
 import os
 
@@ -19,12 +18,3 @@ def get_attributes(db_response):
 
     # Split the attributes.
     return db_response.split(",")
-
-
-def json_error(error, detail):
-    return jsonify({
-        "error": {
-            "message": error,
-            "detail": detail
-        }
-    })

@@ -7,12 +7,6 @@ class Activity(object):
         self.name = name
         self.id = idx
 
-    def serialize(self):
-        return {
-            "id": self.id,
-            "name": self.name
-        }
-
 
 name_id_map = {
     "Walking": 10,

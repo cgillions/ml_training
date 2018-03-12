@@ -1,4 +1,5 @@
-from utils.db_utils import get_database, json_error, get_attributes
+from utils.db_utils import get_database, get_attributes
+from utils.response_utils import error, success
 from model.target import Target
 from model.trial import Trial
 from flask import request, jsonify
@@ -20,7 +21,7 @@ def get():
 
     for trial in cursor:
         attrs = get_attributes(trial[0])
-        trials.append(Trial(attrs[0], attrs[1], attrs[2], attrs[3]).serialize())
+        trials.append(Trial(attrs[0], attrs[1], attrs[2], attrs[3]).__dict__)
 
     cursor.close()
     database_conn.close()
@@ -30,14 +31,14 @@ def get():
 def post(user_id, data_file, activity_name):
     # Validate the input.
     if user_id is None:
-        return json_error("user_id is required.", "We need a user ID to link the trial to.")
+        return error("user_id is required.", "We need a user ID to link the trial to.")
 
     if activity_name is None:
-        return json_error("activity_name is required.", "We need to know the activity so that we can train the AI.")
+        return error("activity_name is required.", "We need to know the activity so that we can train the AI.")
 
     if data_file is None:
-        return json_error("file is required.", "There was no file associated with the request."
-                                               "The file should contain the raw accelerometer data.")
+        return error("file is required.", "There was no file associated with the request."
+                                          "The file should contain the raw accelerometer data.")
 
     # Convert trial file to bytes.
     ba = bytearray(data_file.read())
@@ -67,7 +68,7 @@ def post(user_id, data_file, activity_name):
     cursor.close()
     database_conn.close()
 
-    return "Trial added for user: {}, activity: {}.".format(user_id, activity_name)
+    return success("Trial added for user: {}, activity: {}.".format(user_id, activity_name))
 
 
 # Function to verify if a file has a txt extension.

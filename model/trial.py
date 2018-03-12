@@ -10,11 +10,3 @@ class Trial(object):
         self.user_id = user_id
         self.filename = filename
         self.data = data
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "filename": self.filename,
-            "data": self.data
-        }

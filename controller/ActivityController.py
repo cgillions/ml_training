@@ -15,7 +15,7 @@ def get():
 
     for activity in cursor:
         attrs = get_attributes(activity[0])
-        activities.append(Activity(attrs[0], attrs[1]).serialize())
+        activities.append(Activity(attrs[0], attrs[1]).__dict__)
 
     cursor.close()
     database_conn.close()
