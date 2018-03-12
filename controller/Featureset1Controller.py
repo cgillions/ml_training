@@ -23,6 +23,9 @@ def post(file):
 
             # Validate the length.
             if len(features) != 7:
+                remove_files(database_conn, cursor, ids, targets)
+                cursor.close()
+                database_conn.close()
                 return error("The wrong amount of features were sent.",
                              "On line {} there were {} values instead of 7. "
                              "There should be 6 features and one target."
@@ -55,12 +58,15 @@ def post(file):
             targets.append(target)
             ids.append(idx)
 
+        cursor.close()
+        database_conn.close()
         return success("{} features added.".format(len(ids)))
 
     # Delete any database entries if there was an error.
     except():
         remove_files(database_conn, cursor, ids, targets)
-
+        cursor.close()
+        database_conn.close()
         return error("Error storing featureset.", "An unknown error occurred on line {}.".format(index))
 
 
@@ -69,12 +75,11 @@ def get():
     database_conn = get_database()
     cursor = database_conn.cursor()
     cursor.execute("""
-                    SELECT (id, "meanXYZ", "stdXYZ") 
+                    SELECT id, "meanXYZ", "stdXYZ"
                     FROM public."Featureset_1";
                     """)
 
-    for feature in cursor:
-        attrs = get_attributes(feature[0])
+    for attrs in cursor:
         features.append(Featureset1(attrs[0], attrs[1], attrs[2]).__dict__)
 
     cursor.close()
@@ -88,7 +93,7 @@ def remove_files(database_conn, cursor, feature_ids, target_ids):
                     DELETE FROM 
                     public."Featureset_1" 
                     WHERE id IN (%s);
-                    """, (",".join(feature_ids)))
+                    """, (",".join(feature_ids),))
 
     for idx, target in zip(feature_ids, target_ids):
         cursor.execute("""
