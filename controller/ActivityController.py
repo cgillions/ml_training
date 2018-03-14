@@ -1,4 +1,4 @@
-from utils.db_utils import get_database, get_attributes
+from utils.db_utils import get_database
 from model.activity import Activity
 from flask import jsonify
 
@@ -13,9 +13,8 @@ def get():
                     ORDER BY id ASC;
                     """)
 
-    for activity in cursor:
-        attrs = get_attributes(activity[0])
-        activities.append(Activity(attrs[0], attrs[1]).__dict__)
+    for activity in cursor.fetchall():
+        activities.append(Activity(activity[0], activity[1]).__dict__)
 
     cursor.close()
     database_conn.close()

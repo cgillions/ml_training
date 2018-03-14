@@ -2,6 +2,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from utils.response_utils import error, success
 from utils.db_utils import get_database
+from base64 import b64decode
 from model.user import User
 from flask import request
 from uuid import uuid4
@@ -43,10 +44,19 @@ def register():
 
 
 # Returns a logged in user, or an error.
-def login(auth_token, username=None, password=None):
+def login(auth_token, authorization):
 
     # Check if the user is authenticated through a token.
     if not is_authenticated(auth_token):
+
+        # Check if credentials were provided.
+        if (authorization is None) or ("Basic " not in authorization):
+            return error("Authorization not provided.", "Using Basic Auth, a username and password must be "
+                                                        "included in the header.")
+
+        # Decode the username & password.
+        authorization = b64decode(authorization.split("Basic ")[1]).decode("utf-8")
+        username, password = authorization.split(":")
 
         # Ensure there is a valid username.
         if username is None:
@@ -115,7 +125,7 @@ def login(auth_token, username=None, password=None):
         return User(idx, username, auth_token, role)
 
     # The user is authenticated. Update the expiry date.
-    ignore, expiry = get_auth_token()
+    expiry = get_auth_token()[1]
 
     database_conn = get_database()
     cursor = database_conn.cursor()

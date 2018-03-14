@@ -1,4 +1,4 @@
-from utils.db_utils import get_database, get_attributes
+from utils.db_utils import get_database
 from utils.response_utils import error, success
 from model.featureset1 import Featureset1
 from flask import jsonify
@@ -70,7 +70,7 @@ def post(file):
         return error("Error storing featureset.", "An unknown error occurred on line {}.".format(index))
 
 
-def get():
+def get(user):
     features = []
     database_conn = get_database()
     cursor = database_conn.cursor()
@@ -84,7 +84,11 @@ def get():
 
     cursor.close()
     database_conn.close()
-    return jsonify({"features": features})
+
+    if user is None:
+        return jsonify({"features": features})
+    else:
+        return jsonify({"features": features, "user": user.__dict__})
 
 
 # Function to remove any files added to the database before an error occurred.

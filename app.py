@@ -21,8 +21,7 @@ def trials():
     # This requires a valid user.
     result = UserController.login(
                     request.headers.get("auth_token"),
-                    request.headers.get("username"),
-                    request.headers.get("password"))
+                    request.headers.get("Authorization"))
 
     # If not a user, return the error.
     if not isinstance(result, User):
@@ -38,10 +37,7 @@ def trials():
                     request.files.get("file"),
                     request.form.get("activity_name"))
     else:
-        if request.headers.get("auth_token") is None:
-            return TrialController.get(result)
-        else:
-            return TrialController.get(None)
+        return TrialController.get(result)
 
 
 @app.route("/featureset1", methods=["GET", "POST"])
@@ -49,8 +45,7 @@ def featureset():
     # This requires a valid user.
     result = UserController.login(
         request.headers.get("auth_token"),
-        request.headers.get("username"),
-        request.headers.get("password"))
+        request.headers.get("Authorization"))
 
     # If not a user, return the error.
     if not isinstance(result, User):
@@ -62,11 +57,11 @@ def featureset():
         else:
             return Featureset1Controller.post(request.files.get("file"))
     else:
-        return Featureset1Controller.get()
+        return Featureset1Controller.get(result)
 
 
 @app.route("/register", methods=["POST"])
-def register_user():
+def register():
     return UserController.register()
 
 
