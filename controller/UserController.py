@@ -191,7 +191,7 @@ def create_user(username, password, role):
     database_conn.close()
 
     # Return the user object.
-    return User(attrs[0], attrs[1], auth_token)
+    return User(attrs[0], attrs[1], auth_token, role)
 
 
 # Auth token valid for two hours.

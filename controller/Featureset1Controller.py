@@ -4,10 +4,14 @@ from model.featureset1 import Featureset1
 from flask import jsonify
 
 
-def post(file):
+def post(trial_id, file):
     if file is None:
         return error("Featureset 1 file is missing.",
                      "The POST request is missing the file containing feature data.")
+
+    if trial_id is None:
+        return error("Featureset 1 trial_id is missing.",
+                     "The POST request to add a new feature is missing the trial_id attribute.")
 
     database_conn = get_database()
     cursor = database_conn.cursor()
@@ -34,12 +38,14 @@ def post(file):
             # Store the data in the database.
             cursor.execute("""
                             INSERT INTO 
-                            public."Featureset_1" (meanXYZ, stdXYZ) 
-                            VALUES (%s, %s) 
+                            public."Featureset_1" 
+                            (meanXYZ, stdXYZ, trial_id) 
+                            VALUES (%s, %s, %s) 
                             RETURNING id;
                             """, (
-                [features[0], features[1], features[2]],
-                [features[3], features[4], features[5]]))
+                            [features[0], features[1], features[2]],
+                            [features[3], features[4], features[5]],
+                            trial_id))
 
             # Commit the transaction.
             database_conn.commit()
@@ -51,7 +57,8 @@ def post(file):
             # Store the target.
             cursor.execute("""
                             INSERT INTO 
-                            public."Target" (feature_id, activity_id) 
+                            public."Target" 
+                            (feature_id, activity_id) 
                             VALUES (%s, %s);
                             """, (idx, target))
 

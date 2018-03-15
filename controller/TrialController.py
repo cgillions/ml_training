@@ -14,8 +14,7 @@ def get(user):
                     FROM public."Trial";
                     """)
 
-    for trial in cursor:
-        attrs = trial[0]
+    for attrs in cursor:
         trials.append(Trial(attrs[0], attrs[1], attrs[2], attrs[3]).__dict__)
 
     cursor.close()

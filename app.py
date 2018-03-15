@@ -3,6 +3,8 @@ import controller.ActivityController as ActivityController
 import controller.TrialController as TrialController
 import controller.UserController as UserController
 from flask import Flask, request
+
+from controller import ParticipantController
 from model.user import User
 from utils.response_utils import error
 
@@ -55,7 +57,7 @@ def featureset():
         if result.role != "admin":
             return error("Permission denied", "You must have administrator rights to upload features.")
         else:
-            return Featureset1Controller.post(request.files.get("file"))
+            return Featureset1Controller.post(request.form.get("trial_id"), request.files.get("file"))
     else:
         return Featureset1Controller.get(result)
 
@@ -63,6 +65,31 @@ def featureset():
 @app.route("/register", methods=["POST"])
 def register():
     return UserController.register()
+
+
+@app.route("/participants", methods=["GET", "POST"])
+def participants():
+    # This requires a valid user.
+    result = UserController.login(
+        request.headers.get("auth_token"),
+        request.headers.get("Authorization"))
+
+    # If not a user, return the error.
+    if not isinstance(result, User):
+        return result
+
+    # If the user isn't an admin, return the error.
+    if result.role != "admin":
+        return error("Permission denied", "You must have administrator rights to upload features.")
+
+    if request.method == "POST":
+        return ParticipantController.post(
+                    request.form.get("id"),
+                    request.form.get("dom_hand"),
+                    request.form.get("watch_hand"),
+                    request.form.get("gender"))
+    else:
+        return ParticipantController.get(request.args.get("id"))
 
 
 if __name__ == "__main__":
