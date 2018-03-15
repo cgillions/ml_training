@@ -37,7 +37,8 @@ def trials():
             return TrialController.post(
                     request.form.get("participant_id"),
                     request.files.get("file"),
-                    request.form.get("activity_name"))
+                    request.form.get("activity_name"),
+                    request.form.get("trial_num"))
     else:
         return TrialController.get(result)
 

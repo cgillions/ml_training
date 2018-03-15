@@ -26,7 +26,7 @@ def get(user):
         return jsonify({"trials": trials, "user": user.__dict__})
 
 
-def post(participant_id, data_file, activity_name):
+def post(participant_id, data_file, activity_name, trial_num):
     # Validate the input.
     if participant_id is None:
         return error("participant_id is required.", "We need a participant ID to link the trial to.")
@@ -38,6 +38,9 @@ def post(participant_id, data_file, activity_name):
         return error("file is required.", "There was no file associated with the request."
                                           "The file should contain the raw accelerometer data.")
 
+    if trial_num is None:
+        return error("trial_num is required.", "We need a trial number link the trial to.")
+
     # Convert trial file to bytes.
     ba = bytearray(data_file.read())
 
@@ -47,10 +50,10 @@ def post(participant_id, data_file, activity_name):
     cursor.execute("""
                     INSERT INTO 
                     public."Trial" 
-                    (participant_id, filename, data) 
-                    VALUES (%s, %s, %s) 
+                    (participant_id, filename, data, trial_num) 
+                    VALUES (%s, %s, %s, %s) 
                     RETURNING id;
-                    """, (participant_id, data_file.filename, ba))
+                    """, (participant_id, data_file.filename, ba, trial_num))
 
     # Commit the transaction.
     database_conn.commit()

@@ -16,7 +16,6 @@ def post(trial_id, file):
     database_conn = get_database()
     cursor = database_conn.cursor()
     ids = []
-    targets = []
     index = 0
     try:
         for line in file:
@@ -27,7 +26,7 @@ def post(trial_id, file):
 
             # Validate the length.
             if len(features) != 7:
-                remove_files(database_conn, cursor, ids, targets)
+                remove_files(database_conn, cursor, ids)
                 cursor.close()
                 database_conn.close()
                 return error("The wrong amount of features were sent.",
@@ -52,17 +51,6 @@ def post(trial_id, file):
 
             # Get the ID and target of the new feature.
             idx = cursor.fetchone()[0]
-            target = features[6]
-
-            # Store the target.
-            cursor.execute("""
-                            INSERT INTO 
-                            public."Target" 
-                            (feature_id, activity_id) 
-                            VALUES (%s, %s);
-                            """, (idx, target))
-
-            targets.append(target)
             ids.append(idx)
 
         cursor.close()
@@ -71,7 +59,7 @@ def post(trial_id, file):
 
     # Delete any database entries if there was an error.
     except():
-        remove_files(database_conn, cursor, ids, targets)
+        remove_files(database_conn, cursor, ids)
         cursor.close()
         database_conn.close()
         return error("Error storing featureset.", "An unknown error occurred on line {}.".format(index))
@@ -99,19 +87,10 @@ def get(user):
 
 
 # Function to remove any files added to the database before an error occurred.
-def remove_files(database_conn, cursor, feature_ids, target_ids):
+def remove_files(database_conn, cursor, feature_ids):
     cursor.execute("""
                     DELETE FROM 
                     public."Featureset_1" 
                     WHERE id IN (%s);
                     """, (",".join(feature_ids),))
-
-    for idx, target in zip(feature_ids, target_ids):
-        cursor.execute("""
-                    DELETE FROM 
-                    public."Target" 
-                    WHERE feature_id=(%s) 
-                    AND activity_id=(%s);
-                    """, (idx, target))
-
     database_conn.commit()
