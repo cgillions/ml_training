@@ -8,7 +8,7 @@ from flask import request
 from uuid import uuid4
 from time import time
 
-ADMIN_SECRET = "5dyvo1z6y34so4ogkgksw88ookoows00cgoc488kcs8wk4c40s"
+from credentials import ADMIN_SECRET
 
 
 def register():
