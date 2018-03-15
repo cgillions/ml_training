@@ -1,5 +1,5 @@
 from utils.db_utils import get_database
-from model.activity import Activity
+from api.model.activity import Activity
 from flask import jsonify
 
 

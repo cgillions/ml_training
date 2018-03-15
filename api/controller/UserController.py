@@ -3,7 +3,7 @@ from argon2.exceptions import VerifyMismatchError
 from utils.response_utils import error, success
 from utils.db_utils import get_database
 from base64 import b64decode
-from model.user import User
+from api.model.user import User
 from flask import request
 from uuid import uuid4
 from time import time

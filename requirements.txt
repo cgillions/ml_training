@@ -9,6 +9,7 @@ idna==2.6
 itsdangerous==0.24
 Jinja2==2.10
 MarkupSafe==1.0
+numpy==1.14.2
 psycopg2-binary==2.7.4
 pycparser==2.18
 requests==2.18.4

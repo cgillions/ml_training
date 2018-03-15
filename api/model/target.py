@@ -1,4 +1,4 @@
-from model.activity import name_id_map
+from api.model.activity import name_id_map
 
 
 class Target(object):

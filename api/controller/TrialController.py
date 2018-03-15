@@ -1,7 +1,7 @@
 from utils.db_utils import get_database
 from utils.response_utils import error, success
-from model.target import Target
-from model.trial import Trial
+from api.model.target import Target
+from api.model.trial import Trial
 from flask import jsonify
 
 
@@ -42,7 +42,7 @@ def post(participant_id, data_file, activity_name, trial_num):
         return error("trial_num is required.", "We need a trial number link the trial to.")
 
     # Convert trial file to bytes.
-    ba = bytearray(data_file.read())
+    data = data_file.read()
 
     # Store the data in the database.
     database_conn = get_database()
@@ -53,7 +53,7 @@ def post(participant_id, data_file, activity_name, trial_num):
                     (participant_id, filename, data, trial_num) 
                     VALUES (%s, %s, %s, %s) 
                     RETURNING id;
-                    """, (participant_id, data_file.filename, ba, trial_num))
+                    """, (participant_id, data_file.filename, data, trial_num))
 
     # Commit the transaction.
     database_conn.commit()

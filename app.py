@@ -1,16 +1,15 @@
-import controller.Featureset1Controller as Featureset1Controller
-import controller.ActivityController as ActivityController
-import controller.TrialController as TrialController
-import controller.UserController as UserController
+from api.controller import Featureset1Controller as Featureset1Controller, \
+                           ParticipantController as ParticipantController, \
+                           ActivityController as ActivityController, \
+                           TrialController as TrialController, \
+                           UserController as UserController
+
+from utils.response_utils import error
+from api.model.user import User
 from flask import Flask, request
 
-from controller import ParticipantController
-from model.user import User
-from utils.response_utils import error
 
 app = Flask(__name__)
-
-app.config["ADMIN_SECRET"] = "5dyvo1z6y34so4ogkgksw88ookoows00cgoc488kcs8wk4c40s"
 
 
 @app.route("/activities", methods=["GET"])

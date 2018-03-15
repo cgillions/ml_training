@@ -1,6 +1,6 @@
 from utils.db_utils import get_database
 from utils.response_utils import error, success
-from model.featureset1 import Featureset1
+from api.model import Featureset1
 from flask import jsonify
 
 

@@ -1,5 +1,5 @@
 from utils.response_utils import error, success
-from model.participant import Participant
+from api.model.participant import Participant
 from utils.db_utils import get_database
 from flask import jsonify
 
