@@ -56,25 +56,15 @@ for trial_id, trial_data in cursor.fetchall():
         data_count = len([data for (_, data) in enumerate(trial_matrix, data_covered)
                          if data[0] < end_time])
 
-        # Create a matrix to hold the sample of data.
-        section_matrix = np.ndarray((data_count, 4))
-        section_start = trial_matrix[data_covered][0]
-        section_index = 0
-
         # Add data from the time period interval to the sample.
-        for data in enumerate(trial_matrix, data_covered):
-            if data[1][0] < end_time:
-                section_matrix[section_index] = data[1]
-                section_index += 1
-                data_covered += 1
-            else:
-                break
+        section_matrix = [data for _, data in enumerate(trial_matrix, data_covered) if data[0] < end_time]
+        data_covered += len(section_matrix)
 
         # Compute the mean of the sample.
-        means = np.mean(section_matrix[:, range(1, 4)], axis=0)
+        means = np.mean(section_matrix, axis=0)
 
         # Compute the standard deviation of the sample.
-        stds = np.std(section_matrix[:, range(1, 4)], axis=0)
+        stds = np.std(section_matrix, axis=0)
 
         # Store the feature in the database.
         cursor.execute("""
@@ -82,8 +72,7 @@ for trial_id, trial_data in cursor.fetchall():
                         public."Featureset_1"
                         ("meanXYZ", "stdXYZ", trial_id)
                         VALUES (%s, %s, %s);
-                        """, (means.tolist(), stds.tolist(), trial_id))
-
+                        """, (means[1:4].tolist(), stds[1:4].tolist(), trial_id))
         print("Made a feature for trial {}".format(trial_id))
 
 # Commit all the features.
