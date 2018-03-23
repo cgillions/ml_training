@@ -46,10 +46,10 @@ def get_classifiers():
     ]
 
 
-def get_train_test_data(features):
+def get_train_test_data(features, feature_range, target_range):
     # Split the data into features & targets.
-    x = [feature[0:6] for feature in features]
-    y = [feature[6] for feature in features]
+    x = [[feature[index] for index in feature_range] for feature in features]
+    y = [[feature[index] for index in target_range] for feature in features]
 
     # Split the features into training and testing.
     return train_test_split(x, y, test_size=0.2)
@@ -99,7 +99,7 @@ def get_best_classifier(x_train, x_test, y_train, y_test):
     return classifiers[accuracies.index(max(accuracies))], max(accuracies)
 
 
-def plot_confusion(classifier, class_names, x_test, y_test, cnf_matrix=None):
+def plot_confusion(classifier, class_names, x_test, y_test, cnf_matrix=None, title=None):
     plt.figure()
 
     if cnf_matrix is None:
@@ -112,9 +112,15 @@ def plot_confusion(classifier, class_names, x_test, y_test, cnf_matrix=None):
         cnf_matrix = confusion_matrix(y_test, results)
 
         # Set the title.
-        plt.title("Confusion Matrix for {}".format(classifier.__class__.__name__))
+        if title is None:
+            plt.title("Confusion Matrix for {}".format(classifier.__class__.__name__))
+        else:
+            plt.title(title)
     else:
-        plt.title("Summed Confusion Matrix")
+        if title is None:
+            plt.title("Summed Confusion Matrix")
+        else:
+            plt.title(title)
 
     np.set_printoptions(precision=4)
     plt.imshow(cnf_matrix, cmap=plt.cm.Blues)
@@ -176,7 +182,7 @@ def script():
                 features.remove(row)
 
     # Split the features into training and testing.
-    x_train, x_test, y_train, y_test = get_train_test_data(features)
+    x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), range(6, 7))
 
     # Plot confusion matrices.
     conf_matrix = None
@@ -201,4 +207,5 @@ def script():
 
 
 # Run the analysis script.
-script()
+if __name__ == "__main__":
+    script()
