@@ -7,15 +7,14 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import LinearSVC, SVC
 
 from sklearn.model_selection import train_test_split
-
-from utils.db_utils import get_database
-from api.model.activity import name_id_map
-
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+from random import shuffle
 import numpy as np
 import itertools
-from random import shuffle
+
+from api.model.activity import name_id_map
+from utils.db_utils import get_database
 
 
 def get_features(cursor, activities):
@@ -100,20 +99,25 @@ def get_best_classifier(x_train, x_test, y_train, y_test):
     return classifiers[accuracies.index(max(accuracies))], max(accuracies)
 
 
-def plot_confusion(classifier, class_names, x_test, y_test):
-    print("Plotting confusion matrix for {}".format(classifier.__class__.__name__))
-
-    # Calculate probabilities.
-    results = classifier.predict(X=x_test)
-
-    # Create the confusion matrix.
-    cnf_matrix = confusion_matrix(y_test, results)
-    np.set_printoptions(precision=4)
-
+def plot_confusion(classifier, class_names, x_test, y_test, cnf_matrix=None):
     plt.figure()
+
+    if cnf_matrix is None:
+        print("Plotting confusion matrix for {}".format(classifier.__class__.__name__))
+
+        # Calculate probabilities.
+        results = classifier.predict(X=x_test)
+
+        # Create the confusion matrix.
+        cnf_matrix = confusion_matrix(y_test, results)
+
+        # Set the title.
+        plt.title("Confusion Matrix for {}".format(classifier.__class__.__name__))
+    else:
+        plt.title("Summed Confusion Matrix")
+
+    np.set_printoptions(precision=4)
     plt.imshow(cnf_matrix, cmap=plt.cm.Blues)
-    plt.title("Confusion Matrix for {}".format(classifier.__class__.__name__))
-    plt.colorbar()
     tick_marks = np.arange(len(class_names))
     plt.xticks(tick_marks, class_names, rotation=45)
     plt.yticks(tick_marks, class_names)
@@ -129,6 +133,8 @@ def plot_confusion(classifier, class_names, x_test, y_test):
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.show()
+
+    return cnf_matrix
 
 
 def script():
@@ -151,6 +157,9 @@ def script():
     cursor.close()
     database_conn.close()
 
+    # Shuffle the features to distribute them more randomly between users and trials.
+    shuffle(features)
+
     # Ensure there are the same number of features for each class.
     class_counts = []
     for activity_id in activity_ids:
@@ -166,11 +175,20 @@ def script():
             for row in rows[:-min_count]:
                 features.remove(row)
 
-    # Shuffle the features to distribute them more randomly between training and testing.
-    shuffle(features)
-
     # Split the features into training and testing.
     x_train, x_test, y_train, y_test = get_train_test_data(features)
+
+    # Plot confusion matrices.
+    conf_matrix = None
+    for classifier in get_trained_classifiers(x_train, x_test, y_train, y_test):
+        cnf = plot_confusion(classifier, activities, x_test, y_test)
+        if conf_matrix is None:
+            conf_matrix = cnf
+        else:
+            conf_matrix += cnf
+
+    # Plot the total conf matrix.
+    plot_confusion(None, activities, x_test, y_test, conf_matrix)
 
     # Get the best classifier for these features.
     classifier, accuracy = get_best_classifier(x_train, x_test, y_train, y_test)
