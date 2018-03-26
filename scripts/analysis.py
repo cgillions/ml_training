@@ -13,8 +13,7 @@ from random import shuffle
 import numpy as np
 import itertools
 
-from api.model.activity import name_id_map
-from utils.db_utils import get_database
+from utils.db_utils import get_database, name_id_map
 
 
 def get_features(cursor, activities):

@@ -1,4 +1,4 @@
-from api.model.activity import name_id_map
+from utils.db_utils import name_id_map
 
 
 class Target(object):
