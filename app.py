@@ -1,4 +1,5 @@
-from api.controller import Featureset1Controller as Featureset1Controller, \
+from api.controller import ClassificationController as ClassificationController, \
+                           Featureset1Controller as Featureset1Controller, \
                            ParticipantController as ParticipantController, \
                            ActivityController as ActivityController, \
                            TrialController as TrialController, \
@@ -10,6 +11,11 @@ from flask import Flask, request
 
 
 app = Flask(__name__)
+
+
+@app.route("/classify", methods=["POST"])
+def classify():
+    return ClassificationController.classify(request.form.get("acceleration"), request.form.get("diff_hands"))
 
 
 @app.route("/activities", methods=["GET"])
