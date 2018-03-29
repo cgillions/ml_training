@@ -53,7 +53,18 @@ def get_train_test_data(features, feature_range, target_index):
     return train_test_split(x, y, test_size=0.2)
 
 
-def get_trained_classifiers(x_train, x_test, y_train, y_test):
+def get_accuracy(classifier, x, target):
+    # Predict results.
+    results = classifier.predict(x)
+
+    # Compare results to the actual target.
+    accuracy = np.mean(results == target) * 100
+
+    # Return the result.
+    return accuracy
+
+
+def get_trained_classifiers(x_train, y_train):
     # Get the classifiers.
     classifiers = get_classifiers()
 
@@ -61,39 +72,18 @@ def get_trained_classifiers(x_train, x_test, y_train, y_test):
     for classifier in classifiers:
         classifier.fit(x_train, y_train)
 
-    # Measure their accuracies using the testing data.
-    accuracies = []
-    for classifier in classifiers:
-
-        # Predict results.
-        results = classifier.predict(x_test)
-
-        # Compare results to the actual target.
-        accuracy = np.mean(results == y_test) * 100
-
-        # Store the result.
-        print("{}\n{}\n".format(classifier.__class__.__name__, accuracy))
-        accuracies.append(accuracy)
-
     # Return the classifier with the best accuracy.
     return classifiers
 
 
 def get_best_classifier(x_train, x_test, y_train, y_test):
-    classifiers = get_trained_classifiers(x_train, x_test, y_train, y_test)
-    accuracies = []
+    # Train the classifiers.
+    classifiers = get_trained_classifiers(x_train,  y_train)
 
-    for classifier in classifiers:
+    # Measure their accuracies using the testing data.
+    accuracies = [get_accuracy(classifier, x_test, y_test) for classifier in classifiers]
 
-        # Predict results.
-        results = classifier.predict(x_test)
-
-        # Compare results to the actual target.
-        accuracy = np.mean(results == y_test) * 100
-
-        # Store the result.
-        accuracies.append(accuracy)
-
+    # Return the best performing one.
     return classifiers[accuracies.index(max(accuracies))], max(accuracies)
 
 
@@ -184,7 +174,7 @@ def script():
 
     # Plot confusion matrices.
     conf_matrix = None
-    for classifier in get_trained_classifiers(x_train, x_test, y_train, y_test):
+    for classifier in get_trained_classifiers(x_train, y_train):
         cnf = plot_confusion(classifier, activities, x_test, y_test)
         if conf_matrix is None:
             conf_matrix = cnf
