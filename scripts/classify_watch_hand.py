@@ -1,17 +1,8 @@
 from scripts.analysis import get_train_test_data, plot_confusion, get_best_classifier
-from utils.db_utils import get_database
+from utils.db_utils import get_database, LEFT_TARGET, RIGHT_TARGET
 from random import shuffle
 import numpy as np
 import pickle
-
-RIGHT_TARGET = 20
-LEFT_TARGET = 10
-
-activity = "Writing"
-participant = 13
-trial = 3
-
-filename = "{}_user_{}_trial_{}.txt".format(activity, participant, trial)
 
 database_conn = get_database()
 cursor = database_conn.cursor()
@@ -31,7 +22,7 @@ features = [[attrs[0][0], attrs[0][1], attrs[0][2], attrs[1][0], attrs[1][1], at
 shuffle(features)
 
 # Create training data for classifying a user's dominant hand.
-x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), range(6, 7))
+x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), 6)
 
 for index, hand in enumerate(y_train):
     if hand[0] == 'r':
@@ -61,7 +52,8 @@ if model is None:
     print("Best classifier is: {}, with accuracy {}".format(classifier.__class__.__name__, accuracy))
 
     # Plot the confusion matrix of the best performing.
-    cnf_matrix = plot_confusion(classifier, ["Left", "Right"], x_test, y_test, title="Confusion Matrix for Watch Hand")
+    cnf_matrix = plot_confusion(classifier, ["Left", "Right"], x_test, y_test,
+                                title="Confusion Matrix for Watch Hand")
 
     # Calculate the accuracies for left and right handed users.
     left_accuracy = cnf_matrix[0][0] / sum(cnf_matrix[0]) * 100

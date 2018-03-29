@@ -1,6 +1,11 @@
 import psycopg2
 import os
 
+
+LEFT_TARGET = 10
+RIGHT_TARGET = 20
+
+
 DATABASE_URL = os.environ["DATABASE_URL"]
 
 

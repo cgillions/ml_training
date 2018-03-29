@@ -22,8 +22,7 @@ def get_features(cursor, activities):
                     FROM public."Featureset_1" fs1, public."Target" target, public."Trial" trial
                     WHERE fs1.trial_id = target.trial_id
                     AND target.trial_id = trial.id
-                    AND activity_id IN %s
-                    AND trial.participant_id != 0;
+                    AND activity_id IN %s;
                     """, (tuple(activities),))
 
     # Create a matrix of feature data.
@@ -45,10 +44,10 @@ def get_classifiers():
     ]
 
 
-def get_train_test_data(features, feature_range, target_range):
+def get_train_test_data(features, feature_range, target_index):
     # Split the data into features & targets.
     x = [[feature[index] for index in feature_range] for feature in features]
-    y = [[feature[index] for index in target_range] for feature in features]
+    y = [feature[target_index] for feature in features]
 
     # Split the features into training and testing.
     return train_test_split(x, y, test_size=0.2)
@@ -181,7 +180,7 @@ def script():
                 features.remove(row)
 
     # Split the features into training and testing.
-    x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), range(6, 7))
+    x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), 6)
 
     # Plot confusion matrices.
     conf_matrix = None

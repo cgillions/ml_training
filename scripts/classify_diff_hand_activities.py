@@ -1,18 +1,28 @@
-from scripts.analysis import get_train_test_data, plot_confusion, get_best_classifier
-from utils.db_utils import get_database, LEFT_TARGET, RIGHT_TARGET
+from scripts.analysis import plot_confusion, get_best_classifier, get_train_test_data
+from utils.db_utils import get_database, name_id_map
 from random import shuffle
 import numpy as np
 import pickle
 
+
+# Define the activities to classify.
+activities = ["Walking", "Jogging", "Cycling", "Writing", "Typing", "Sitting",
+              "Standing", "On Phone (sit)", "On Phone (stand)"]
+activity_ids = [name_id_map[activity] for activity in activities]
+
 database_conn = get_database()
 cursor = database_conn.cursor()
 
+# Select features where the participant's watch hand is different to their dominant hand.
 cursor.execute("""
-                SELECT "meanXYZ", "stdXYZ", dom_hand
-                FROM public."Featureset_1" feature, public."Participant" ptct, public."Trial" trial
-                WHERE trial.participant_id = ptct.id
-                AND trial.id = feature.trial_id;
-                """)
+                SELECT "meanXYZ", "stdXYZ", activity_id
+                FROM public."Featureset_1" fs1, public."Target" target, public."Participant" ptct, public."Trial" trial
+                WHERE ptct.dom_hand <> ptct.watch_hand
+                AND trial.participant_id = ptct.id
+                AND trial.id = fs1.trial_id
+                AND trial.id = target.trial_id
+                AND target.activity_id IN %s;
+                """, (tuple(activity_ids),))
 
 # Create a matrix of feature data.
 features = [[attrs[0][0], attrs[0][1], attrs[0][2], attrs[1][0], attrs[1][1], attrs[1][2], attrs[2]]
@@ -24,27 +34,14 @@ shuffle(features)
 # Create training data for classifying a user's dominant hand.
 x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), 6)
 
-# Update the target to a numerical value.
-for index, hand in enumerate(y_train):
-    if hand[0] == 'r':
-        y_train[index] = RIGHT_TARGET
-    else:
-        y_train[index] = LEFT_TARGET
-
-for index, hand in enumerate(y_test):
-    if hand[0] == 'r':
-        y_test[index] = RIGHT_TARGET
-    else:
-        y_test[index] = LEFT_TARGET
-
 # Attempt to load the classifier from the database.
 cursor.execute("""
                 SELECT data
                 FROM public."Model"
                 WHERE name = %s;
-                """, ("dom_hand",))
+                """, ("diff_hand_activity_set_1",))
 
-model = cursor.fetchone()
+model = None  # cursor.fetchone()
 if model is None:
     # Get the best classifier for these features.
     classifier, accuracy = get_best_classifier(x_train, x_test, y_train, y_test)
@@ -53,16 +50,18 @@ if model is None:
     print("Best classifier is: {}, with accuracy {}".format(classifier.__class__.__name__, accuracy))
 
     # Plot the confusion matrix of the best performing.
-    cnf_matrix = plot_confusion(classifier, ["Left", "Right"], x_test, y_test,
+    cnf_matrix = plot_confusion(classifier, activities, x_test, y_test,
                                 title="Confusion Matrix for Dominant Hand")
 
-    # Calculate the accuracies for left and right handed users.
-    left_accuracy = cnf_matrix[0][0] / sum(cnf_matrix[0]) * 100
-    right_accuracy = cnf_matrix[1][1] / sum(cnf_matrix[1]) * 100
+    # Calculate the accuracies for each activity.
+    accuracies = dict()
+    for index, activity in enumerate(activities):
+        accuracies[activity] = (cnf_matrix[index][index] / sum(cnf_matrix[index]) * 100)
 
+    # Encode the model's meta-data.
     cnf_encoded = pickle.dumps(cnf_matrix)
     classifier_encoded = pickle.dumps(classifier)
-    accuracies_encoded = pickle.dumps({"left": left_accuracy, "right": right_accuracy})
+    accuracies_encoded = pickle.dumps(accuracies)
 
     cursor.execute("""
                     INSERT INTO
@@ -72,7 +71,7 @@ if model is None:
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, "dom_hand",
+                    """, (classifier_encoded, "diff_hand_activity_set_1",
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,
