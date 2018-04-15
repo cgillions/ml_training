@@ -52,7 +52,7 @@ def classify(acceleration_data, diff_hands):
     # Predict the activities.
     activity_ids = classifier.predict(features)
 
-    # Create wrapper objects to store meta-data.
+    # Create wrapper objects to store attribute name meta-data.
     activities = []
     for activity_id, time_interval in zip(activity_ids, time_intervals):
         activities.append(Activity(
