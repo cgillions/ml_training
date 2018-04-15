@@ -33,14 +33,14 @@ def classify(acceleration_data, diff_hands):
         diff_hands = classifier.predict(features)
 
         # Use the mean predicted configuration.
-        diff_hands = np.average(diff_hands)
+        diff_hands = sum(diff_hands) > (len(diff_hands) / 2)
 
     # Load the suitable activity classifier.
     cursor.execute("""
                     SELECT data
                     FROM public."Model"
                     WHERE name = %s;
-                    """, ("{}_hand_activity_set_1".format("diff" if bool(diff_hands) else "same"),))
+                    """, ("{}_hand_activity_set_1".format("diff" if diff_hands == 1 else "same"),))
 
     model_data = cursor.fetchone()[0]
     classifier = pickle.loads(model_data)
@@ -63,7 +63,7 @@ def classify(acceleration_data, diff_hands):
                           .__dict__)
 
     # Return the activities in json.
-    return jsonify({"activities": activities, "diff_hands": diff_hands})
+    return jsonify({"activities": activities, "diff_hands": "true" if diff_hands else "false"})
 
 
 def get_features(acceleration_data):
