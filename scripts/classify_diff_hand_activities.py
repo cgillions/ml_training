@@ -14,6 +14,7 @@ database_conn = get_database()
 cursor = database_conn.cursor()
 
 # Select features where the participant's watch hand is different to their dominant hand.
+# Change <> to = for creating the model for the opposite.
 cursor.execute("""
                 SELECT "meanXYZ", "stdXYZ", activity_id
                 FROM public."Featureset_1" fs1, public."Target" target, public."Participant" ptct, public."Trial" trial

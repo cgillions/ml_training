@@ -1,5 +1,5 @@
 from scripts.analysis import get_train_test_data, plot_confusion, get_best_classifier
-from utils.db_utils import get_database, LEFT_TARGET, RIGHT_TARGET
+from utils.db_utils import get_database
 from random import shuffle
 import numpy as np
 import pickle
