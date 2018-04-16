@@ -2,6 +2,7 @@ from api.model.activity import Activity
 from utils.classification_utils import BIN_SIZE
 from utils.response_utils import error
 from utils.db_utils import get_database, name_id_map
+from python_speech_features import mfcc
 from flask import jsonify
 import numpy as np
 import pickle
@@ -125,7 +126,7 @@ def get_features(acceleration_data):
                 break
 
         # Get features for the sample.
-        features.append(extract_features(section_matrix))
+        features.append(extract_featureset2(section_matrix))
 
         # Keep track of the start and end time for this feature.
         time_intervals.append([section_start, section_matrix[section_index - 1][0]])
@@ -133,7 +134,7 @@ def get_features(acceleration_data):
     return features, time_intervals
 
 
-def extract_features(data_sample):
+def extract_featureset1(data_sample):
     # Compute the mean of the sample.
     means = np.mean(data_sample[:, range(1, 4)], axis=0)
 
@@ -142,3 +143,34 @@ def extract_features(data_sample):
 
     # Return the feature array.
     return np.append(means, stds)
+
+
+def extract_featureset2(data_sample):
+    # Compute the mean of the sample.
+    means = np.mean(data_sample, axis=0)
+    # Compute the standard deviation of the sample.
+    stds = np.std(data_sample, axis=0)
+    length = (data_sample[len(data_sample) - 1][0] - data_sample[0][0]) / 1000
+    step = (data_sample[1][0] - data_sample[0][0]) / 1000
+    # Compute the 13 mel-frequency cepstral coefficients for the x axis.
+    mfccX = mfcc(
+        np.asarray([row[1] for row in data_sample]),
+        winlen=length,
+        winstep=step,
+        nfft=800000
+    )
+    # Compute the 13 mel-frequency cepstral coefficients for the y axis.
+    mfccY = mfcc(
+        np.asarray([row[2] for row in data_sample]),
+        winlen=length,
+        winstep=step,
+        nfft=800000
+    )
+    # Compute the 13 mel-frequency cepstral coefficients for the z axis.
+    mfccZ = mfcc(
+        np.asarray([row[3] for row in data_sample]),
+        winlen=length,
+        winstep=step,
+        nfft=800000
+    )
+    return np.concatenate((means, stds, mfccX, mfccY, mfccZ))
