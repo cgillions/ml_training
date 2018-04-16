@@ -7,44 +7,77 @@ from flask import jsonify
 import numpy as np
 import pickle
 
+FEATURE_SET = 2
+
 
 def classify(acceleration_data, diff_hands):
     if acceleration_data is None:
         return error("Acceleration data not provided.", "Post accelerometer data in the request.")
 
     # Get the features from the data.
-    features, time_intervals = get_features(acceleration_data)
+    features, time_intervals = get_features(acceleration_data, FEATURE_SET)
 
     # Connect to the database.
     database_conn = get_database()
     cursor = database_conn.cursor()
 
-    # Work out the dominant / watch hand configuration.
-    if diff_hands is None:
+    classifier = None
+    if FEATURE_SET == 1:
+
+        # Work out the dominant / watch hand configuration.
+        if diff_hands is None:
+            cursor.execute("""
+                            SELECT data
+                            FROM public."Model"
+                            WHERE name = %s;
+                            """, ("diff_hands",))
+
+            model_data = cursor.fetchone()[0]
+            classifier = pickle.loads(model_data)
+
+            # Classify whether the user's dominant hand is different to their watch hand.
+            diff_hands = classifier.predict(features)
+
+            # Use the mean predicted configuration.
+            diff_hands = sum(diff_hands) > (len(diff_hands) / 2)
+
+        # Load the suitable activity classifier.
         cursor.execute("""
                         SELECT data
                         FROM public."Model"
                         WHERE name = %s;
-                        """, ("diff_hands",))
+                        """, ("{}_hand_activity_set_1".format("diff" if diff_hands == 1 else "same"),))
 
         model_data = cursor.fetchone()[0]
         classifier = pickle.loads(model_data)
 
-        # Classify whether the user's dominant hand is different to their watch hand.
-        diff_hands = classifier.predict(features)
+    if FEATURE_SET == 2:
 
-        # Use the mean predicted configuration.
-        diff_hands = sum(diff_hands) > (len(diff_hands) / 2)
+        # Work out the dominant / watch hand configuration.
+        if diff_hands is None:
+            cursor.execute("""
+                            SELECT data
+                            FROM public."Model"
+                            WHERE name = %s;
+                            """, ("diff_hands_fs2",))
 
-    # Load the suitable activity classifier.
-    cursor.execute("""
-                    SELECT data
-                    FROM public."Model"
-                    WHERE name = %s;
-                    """, ("{}_hand_activity_set_1".format("diff" if diff_hands == 1 else "same"),))
+            model_data = cursor.fetchone()[0]
+            classifier = pickle.loads(model_data)
 
-    model_data = cursor.fetchone()[0]
-    classifier = pickle.loads(model_data)
+            # Classify whether the user's dominant hand is different to their watch hand.
+            diff_hands = classifier.predict(features)
+
+            # Use the mean predicted configuration.
+            diff_hands = sum(diff_hands) > (len(diff_hands) / 2)
+        # Load the suitable activity classifier.
+        cursor.execute("""
+                        SELECT data
+                        FROM public."Model"
+                        WHERE name = %s;
+                        """, ("{}_hand_activity_set_1_fs2".format("diff" if diff_hands == 1 else "same"),))
+
+        model_data = cursor.fetchone()[0]
+        classifier = pickle.loads(model_data)
 
     # Close the database connection.
     cursor.close()
@@ -67,7 +100,7 @@ def classify(acceleration_data, diff_hands):
     return jsonify({"activities": activities, "diff_hands": "true" if diff_hands else "false"})
 
 
-def get_features(acceleration_data):
+def get_features(acceleration_data, featureset):
     line_count = len(acceleration_data.splitlines())
 
     # Create a matrix to hold the trial data.
@@ -126,7 +159,10 @@ def get_features(acceleration_data):
                 break
 
         # Get features for the sample.
-        features.append(extract_featureset2(section_matrix))
+        if featureset == 1:
+            features.append(extract_featureset1(section_matrix))
+        else:
+            features.append(extract_featureset2(section_matrix))
 
         # Keep track of the start and end time for this feature.
         time_intervals.append([section_start, section_matrix[section_index - 1][0]])
@@ -147,12 +183,14 @@ def extract_featureset1(data_sample):
 
 def extract_featureset2(data_sample):
     # Compute the mean of the sample.
-    means = np.mean(data_sample, axis=0)
+    means = np.mean(data_sample[:, range(1, 4)], axis=0)
+
     # Compute the standard deviation of the sample.
-    stds = np.std(data_sample, axis=0)
+    stds = np.std(data_sample[:, range(1, 4)], axis=0)
+
+    # Compute the 13 mel-frequency cepstral coefficients for the x axis.
     length = (data_sample[len(data_sample) - 1][0] - data_sample[0][0]) / 1000
     step = (data_sample[1][0] - data_sample[0][0]) / 1000
-    # Compute the 13 mel-frequency cepstral coefficients for the x axis.
     mfccX = mfcc(
         np.asarray([row[1] for row in data_sample]),
         winlen=length,
@@ -173,4 +211,4 @@ def extract_featureset2(data_sample):
         winstep=step,
         nfft=800000
     )
-    return np.concatenate((means, stds, mfccX, mfccY, mfccZ))
+    return np.concatenate((means, stds, mfccX[0], mfccY[0], mfccZ[0]))

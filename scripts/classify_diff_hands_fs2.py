@@ -9,41 +9,43 @@ cursor = database_conn.cursor()
 
 # Get the participant's information alongside the features.
 cursor.execute("""
-                SELECT "meanXYZ", "stdXYZ", dom_hand, watch_hand
-                FROM public."Featureset_2" feature, public."Participant" ptct, public."Trial" trial
+                SELECT "meanXYZ", "stdXYZ", "mfccX", "mfccY", "mfccZ", dom_hand, watch_hand
+                FROM public."Featureset_2" fs2, public."Participant" ptct, public."Trial" trial
                 WHERE trial.participant_id = ptct.id
-                AND trial.id = feature.trial_id;
+                AND trial.id = fs2.trial_id;
                 """)
 
 # Create a matrix of feature data.
-features = [[attrs[0][0], attrs[0][1], attrs[0][2], attrs[1][0], attrs[1][1], attrs[1][2], attrs[2] == attrs[3]]
+features = [[
+             # Mean
+             attrs[0][0], attrs[0][1], attrs[0][2],
+             # Deviation
+             attrs[1][0], attrs[1][1], attrs[1][2],
+             # MFCC X
+             attrs[2][0][0], attrs[2][0][1], attrs[2][0][2], attrs[2][0][3], attrs[2][0][4],attrs[2][0][5], attrs[2][0][6],
+             attrs[2][0][7], attrs[2][0][8], attrs[2][0][9], attrs[2][0][10], attrs[2][0][11], attrs[2][0][12],
+             # MFCC Y[0]
+             attrs[3][0][0], attrs[3][0][1], attrs[3][0][2], attrs[3][0][3], attrs[3][0][4], attrs[3][0][5], attrs[3][0][6],
+             attrs[3][0][7], attrs[3][0][8], attrs[3][0][9], attrs[3][0][10], attrs[3][0][11], attrs[3][0][12],
+             # MFCC Z[0]
+             attrs[4][0][0], attrs[4][0][1], attrs[4][0][2], attrs[4][0][3], attrs[4][0][4], attrs[4][0][5], attrs[4][0][6],
+             attrs[4][0][7], attrs[4][0][8], attrs[4][0][9], attrs[4][0][10], attrs[4][0][11], attrs[4][0][12],
+             # Target
+             attrs[5] == attrs[6]]
             for attrs in cursor.fetchall()]
 
 # Shuffle the features to distribute them more randomly between users and trials.
 shuffle(features)
 
 # Create training data for classifying a user's dominant hand.
-x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), 6)
-
-# # Update the target to a numerical value.
-# for index, hand in enumerate(y_train):
-#     if hand[0] == 'r':
-#         y_train[index] = RIGHT_TARGET
-#     else:
-#         y_train[index] = LEFT_TARGET
-#
-# for index, hand in enumerate(y_test):
-#     if hand[0] == 'r':
-#         y_test[index] = RIGHT_TARGET
-#     else:
-#         y_test[index] = LEFT_TARGET
+x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 45), 45)
 
 # Attempt to load the classifier from the database.
 cursor.execute("""
                 SELECT data
                 FROM public."Model"
                 WHERE name = %s;
-                """, ("diff_hands",))
+                """, ("diff_hands_fs2",))
 
 model = None  # cursor.fetchone()
 if model is None:
@@ -73,7 +75,7 @@ if model is None:
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, "diff_hands",
+                    """, (classifier_encoded, "diff_hands_fs2",
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,
