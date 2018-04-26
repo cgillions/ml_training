@@ -30,7 +30,7 @@ def classify(acceleration_data, diff_hands):
                             SELECT data
                             FROM public."Model"
                             WHERE name = %s;
-                            """, ("diff_hands",))
+                            """, ("fs1_diff_hands",))
 
             model_data = cursor.fetchone()[0]
             classifier = pickle.loads(model_data)
