@@ -46,7 +46,7 @@ def classify(acceleration_data, diff_hands):
                         SELECT data
                         FROM public."Model"
                         WHERE name = %s;
-                        """, ("{}_hand_activity_set_1".format("diff" if diff_hands == 1 else "same"),))
+                        """, ("as1_fs1_{}_hands".format("diff" if diff_hands == 1 else "same"),))
 
         model_data = cursor.fetchone()[0]
         classifier = pickle.loads(model_data)
