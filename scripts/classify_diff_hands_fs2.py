@@ -4,6 +4,9 @@ from random import shuffle
 import numpy as np
 import pickle
 
+# Define the model name.
+model_name = "fs2_diff_hands"
+
 database_conn = get_database()
 cursor = database_conn.cursor()
 
@@ -45,7 +48,7 @@ cursor.execute("""
                 SELECT data
                 FROM public."Model"
                 WHERE name = %s;
-                """, ("diff_hands_fs2",))
+                """, (model_name,))
 
 model = None  # cursor.fetchone()
 if model is None:
@@ -75,7 +78,7 @@ if model is None:
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, "diff_hands_fs2",
+                    """, (classifier_encoded, model_name,
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,

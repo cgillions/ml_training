@@ -3,9 +3,9 @@ from utils.db_utils import get_database
 import numpy as np
 
 
-participant = 13
-activity = "Writing"
-trial = 3
+participant = 12
+activity = "Typing"
+trial = 4
 
 filename = "{}_user_{}_trial_{}.txt".format(activity, participant, trial)
 
@@ -42,8 +42,8 @@ plt.figure()
 plt.title(filename)
 plt.xlabel('Time (ms epoch)')
 plt.ylabel('Acceleration (m/s)')
-plt.plot(trial_matrix[::2, 0], trial_matrix[::2, 1])
-plt.plot(trial_matrix[::2, 0], trial_matrix[::2, 2])
-plt.plot(trial_matrix[::2, 0], trial_matrix[::2, 3])
+plt.plot(trial_matrix[::4, 0], trial_matrix[::4, 1])
+plt.plot(trial_matrix[::4, 0], trial_matrix[::4, 2])
+plt.plot(trial_matrix[::4, 0], trial_matrix[::4, 3])
 plt.legend(["X", "Y", "Z"])
 plt.show()

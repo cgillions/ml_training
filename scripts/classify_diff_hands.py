@@ -4,13 +4,17 @@ from random import shuffle
 import numpy as np
 import pickle
 
+
+# Define the model name.
+model_name = "fs1_diff_hands"
+
 database_conn = get_database()
 cursor = database_conn.cursor()
 
 # Get the participant's information alongside the features.
 cursor.execute("""
                 SELECT "meanXYZ", "stdXYZ", dom_hand, watch_hand
-                FROM public."Featureset_2" feature, public."Participant" ptct, public."Trial" trial
+                FROM public."Featureset_1" feature, public."Participant" ptct, public."Trial" trial
                 WHERE trial.participant_id = ptct.id
                 AND trial.id = feature.trial_id;
                 """)
@@ -37,15 +41,17 @@ x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), 6)
 #         y_test[index] = RIGHT_TARGET
 #     else:
 #         y_test[index] = LEFT_TARGET
+#
+# We're saved doing this manipulation of data through the boolean comparator in the list comprehension above.
 
 # Attempt to load the classifier from the database.
 cursor.execute("""
                 SELECT data
                 FROM public."Model"
                 WHERE name = %s;
-                """, ("diff_hands",))
+                """, (model_name,))
 
-model = None  # cursor.fetchone()
+model = cursor.fetchone()
 if model is None:
     # Get the best classifier for these features.
     classifier, accuracy = get_best_classifier(x_train, x_test, y_train, y_test)
@@ -55,7 +61,7 @@ if model is None:
 
     # Plot the confusion matrix of the best performing.
     cnf_matrix = plot_confusion(classifier, ["Diff", "Same"], x_test, y_test,
-                                title="Confusion Matrix for Dominant Hand")
+                                title="Confusion Matrix for different hands")
 
     # Calculate the accuracies for left and right handed users.
     diff_accuracy = cnf_matrix[0][0] / sum(cnf_matrix[0]) * 100
@@ -73,7 +79,7 @@ if model is None:
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, "diff_hands",
+                    """, (classifier_encoded, model_name,
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,

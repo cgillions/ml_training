@@ -7,7 +7,7 @@ from flask import jsonify
 import numpy as np
 import pickle
 
-FEATURE_SET = 2
+FEATURE_SET = 1
 
 
 def classify(acceleration_data, diff_hands):
@@ -59,7 +59,7 @@ def classify(acceleration_data, diff_hands):
                             SELECT data
                             FROM public."Model"
                             WHERE name = %s;
-                            """, ("diff_hands_fs2",))
+                            """, ("fs2_diff_hands",))
 
             model_data = cursor.fetchone()[0]
             classifier = pickle.loads(model_data)

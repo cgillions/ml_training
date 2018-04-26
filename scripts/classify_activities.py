@@ -1,14 +1,15 @@
 from scripts.analysis import plot_confusion, get_best_classifier, get_train_test_data
-from utils.db_utils import get_database, name_id_map
+from utils.db_utils import get_database, name_id_map, activity_set_1
 from random import shuffle
 import numpy as np
 import pickle
 
 
+# Define the name of the model.
+model_name = "as1_fs1"
+
 # Define the activities to classify.
-activities = ["Walking", "Jogging", "Cycling", "Writing", "Typing", "Sitting",
-              "Standing", "On Phone (sit)", "On Phone (stand)"]
-activity_ids = [name_id_map[activity] for activity in activities]
+activity_ids = [name_id_map[activity] for activity in activity_set_1]
 
 database_conn = get_database()
 cursor = database_conn.cursor()
@@ -37,7 +38,7 @@ cursor.execute("""
                 SELECT data
                 FROM public."Model"
                 WHERE name = %s;
-                """, ("activity_set_1",))
+                """, (model_name,))
 
 model = cursor.fetchone()
 if model is None:
@@ -48,12 +49,12 @@ if model is None:
     print("Best classifier is: {}, with accuracy {}".format(classifier.__class__.__name__, accuracy))
 
     # Plot the confusion matrix of the best performing.
-    cnf_matrix = plot_confusion(classifier, activities, x_test, y_test,
+    cnf_matrix = plot_confusion(classifier, activity_set_1, x_test, y_test,
                                 title="Confusion Matrix for activities")
 
     # Calculate the accuracies for each activity.
     accuracies = dict()
-    for index, activity in enumerate(activities):
+    for index, activity in enumerate(activity_set_1):
         accuracies[activity] = (cnf_matrix[index][index] / sum(cnf_matrix[index]) * 100)
 
     # Encode the model's meta-data.
@@ -69,7 +70,7 @@ if model is None:
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, "activity_set_1",
+                    """, (classifier_encoded, model_name,
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,
