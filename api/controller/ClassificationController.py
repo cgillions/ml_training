@@ -21,7 +21,7 @@ def classify(acceleration_data, diff_hands):
     database_conn = get_database()
     cursor = database_conn.cursor()
 
-    classifier = None
+    response = None
     if FEATURE_SET == 1:
 
         # Work out the dominant / watch hand configuration.
@@ -43,13 +43,12 @@ def classify(acceleration_data, diff_hands):
 
         # Load the suitable activity classifier.
         cursor.execute("""
-                        SELECT data
+                        SELECT data, target_accuracies
                         FROM public."Model"
                         WHERE name = %s;
                         """, ("as1_fs1_{}_hands".format("diff" if diff_hands == 1 else "same"),))
 
-        model_data = cursor.fetchone()[0]
-        classifier = pickle.loads(model_data)
+        response = cursor.fetchone()
 
     if FEATURE_SET == 2:
 
@@ -71,13 +70,18 @@ def classify(acceleration_data, diff_hands):
             diff_hands = sum(diff_hands) > (len(diff_hands) / 2)
         # Load the suitable activity classifier.
         cursor.execute("""
-                        SELECT data
+                        SELECT data, target_accuracies
                         FROM public."Model"
                         WHERE name = %s;
                         """, ("{}_hand_activity_set_1_fs2".format("diff" if diff_hands == 1 else "same"),))
 
-        model_data = cursor.fetchone()[0]
-        classifier = pickle.loads(model_data)
+        response = cursor.fetchone()
+
+    # Decode the response.
+    model_data = response[0]
+    accuracy_data = response[1]
+    classifier = pickle.loads(model_data)
+    accuracies = pickle.loads(accuracy_data)
 
     # Close the database connection.
     cursor.close()
@@ -93,7 +97,7 @@ def classify(acceleration_data, diff_hands):
                             int(activity_id),
                             name_id_map[activity_id],
                             time_interval[0],
-                            time_interval[1], "0")
+                            time_interval[1], accuracies[name_id_map[activity_id]])
                           .__dict__)
 
     # Return the activities in json.

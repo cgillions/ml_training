@@ -31,13 +31,13 @@ database_conn = get_database()
 cursor = database_conn.cursor()
 
 # List the user directories.
-for user_dir in os.listdir(source_dir):
+for participant_dir in os.listdir(source_dir):
 
     # List the activity directories.
-    for activity_dir in os.listdir("{}/{}".format(source_dir, user_dir)):
+    for activity_dir in os.listdir("{}/{}".format(source_dir, participant_dir)):
 
         # Iterate through the trial files.
-        for trial_file in os.listdir("{}/{}/{}".format(source_dir, user_dir, activity_dir)):
+        for trial_file in os.listdir("{}/{}/{}".format(source_dir, participant_dir, activity_dir)):
 
             print(trial_file)
 
@@ -59,11 +59,11 @@ for user_dir in os.listdir(source_dir):
             # Create the request body.
             body = {"participant_id": participant_id, "activity_name": activity, "trial_num": trial_num}
 
-            # Create the multipart form.
-            trial = open("{}/{}/{}/{}".format(source_dir, user_dir, activity_dir, trial_file), "rb")
+            # Get the byte data from the trial.
+            trial = open("{}/{}/{}/{}".format(source_dir, participant_dir, activity_dir, trial_file), "rb")
             files = {"file": (trial_file, trial)}
 
-            # Send the request.
+            # Send the multi-part request.
             r = requests.post(dst_url, headers=ADMIN_AUTH_HEADER, data=body, files=files)
 
             # Close the file.
