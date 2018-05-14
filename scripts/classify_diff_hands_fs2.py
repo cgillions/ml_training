@@ -27,10 +27,10 @@ features = [[
              # MFCC X
              attrs[2][0][0], attrs[2][0][1], attrs[2][0][2], attrs[2][0][3], attrs[2][0][4],attrs[2][0][5], attrs[2][0][6],
              attrs[2][0][7], attrs[2][0][8], attrs[2][0][9], attrs[2][0][10], attrs[2][0][11], attrs[2][0][12],
-             # MFCC Y[0]
+             # MFCC Y
              attrs[3][0][0], attrs[3][0][1], attrs[3][0][2], attrs[3][0][3], attrs[3][0][4], attrs[3][0][5], attrs[3][0][6],
              attrs[3][0][7], attrs[3][0][8], attrs[3][0][9], attrs[3][0][10], attrs[3][0][11], attrs[3][0][12],
-             # MFCC Z[0]
+             # MFCC Z
              attrs[4][0][0], attrs[4][0][1], attrs[4][0][2], attrs[4][0][3], attrs[4][0][4], attrs[4][0][5], attrs[4][0][6],
              attrs[4][0][7], attrs[4][0][8], attrs[4][0][9], attrs[4][0][10], attrs[4][0][11], attrs[4][0][12],
              # Target

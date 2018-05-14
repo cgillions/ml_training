@@ -15,7 +15,8 @@ cursor.execute("""
                 """)
 
 # Create a matrix of feature data.
-features = [[attrs[0][0], attrs[0][1], attrs[0][2], attrs[1][0], attrs[1][1], attrs[1][2], attrs[2]]
+features = [[attrs[0][0], attrs[0][1], attrs[0][2], attrs[1][0], attrs[1][1], attrs[1][2],
+             RIGHT_TARGET if (attrs[2] == 'r') else LEFT_TARGET]
             for attrs in cursor.fetchall()]
 
 # Shuffle the features to distribute them more randomly between users and trials.
@@ -23,19 +24,6 @@ shuffle(features)
 
 # Create training data for classifying a user's dominant hand.
 x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), 6)
-
-# Update the target to a numerical value.
-for index, hand in enumerate(y_train):
-    if hand[0] == 'r':
-        y_train[index] = RIGHT_TARGET
-    else:
-        y_train[index] = LEFT_TARGET
-
-for index, hand in enumerate(y_test):
-    if hand[0] == 'r':
-        y_test[index] = RIGHT_TARGET
-    else:
-        y_test[index] = LEFT_TARGET
 
 # Attempt to load the classifier from the database.
 cursor.execute("""

@@ -78,10 +78,8 @@ def classify(acceleration_data, diff_hands):
         response = cursor.fetchone()
 
     # Decode the response.
-    model_data = response[0]
-    accuracy_data = response[1]
-    classifier = pickle.loads(model_data)
-    accuracies = pickle.loads(accuracy_data)
+    classifier = pickle.loads(response[0])
+    accuracies = pickle.loads(response[1])
 
     # Close the database connection.
     cursor.close()
@@ -93,12 +91,20 @@ def classify(acceleration_data, diff_hands):
     # Create wrapper objects to store attribute name meta-data.
     activities = []
     for activity_id, time_interval in zip(activity_ids, time_intervals):
-        activities.append(Activity(
-                            int(activity_id),
-                            name_id_map[activity_id],
-                            time_interval[0],
-                            time_interval[1], accuracies[name_id_map[activity_id]])
-                          .__dict__)
+
+        # Get the model's accuracy for the target.
+        accuracy = accuracies[name_id_map[activity_id]]
+
+        # Create a wrapper object.
+        activity = Activity(
+                int(activity_id),
+                name_id_map[activity_id],
+                time_interval[0],
+                time_interval[1],
+                accuracy)
+
+        # Add a key-value dictionary representation.
+        activities.append(activity.__dict__)
 
     # Return the activities in json.
     return jsonify({"activities": activities, "diff_hands": "true" if diff_hands else "false"})
