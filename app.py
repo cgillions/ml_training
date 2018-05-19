@@ -96,6 +96,7 @@ def participants():
 
 @app.route("/models", methods=["GET"])
 def models():
+    print("Made it to models.")
     return ModelController.get()
 
 
