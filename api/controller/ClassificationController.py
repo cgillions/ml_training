@@ -1,5 +1,4 @@
 from api.model.activity import Activity
-from scripts.classify_energy import energy_id_map
 from utils.classification_utils import BIN_SIZE
 from utils.response_utils import error
 from utils.db_utils import get_database, name_id_map, LEFT_TARGET
@@ -9,6 +8,23 @@ import numpy as np
 import pickle
 
 FEATURE_SET = 1
+
+
+energy_id_map = {
+    10: "Idle",
+    20: "Low",
+    30: "Medium",
+    40: "High",
+    "Sitting": 10,
+    "Standing": 10,
+    "On Phone (sit)": 10,
+    "On Phone (stand)": 10,
+    "Writing": 20,
+    "Typing": 20,
+    "Walking": 30,
+    "Cycling": 30,
+    "Jogging": 40
+}
 
 
 def classify(acceleration_data, model_name):
