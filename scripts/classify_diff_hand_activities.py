@@ -1,17 +1,17 @@
 from scripts.analysis import plot_confusion, get_best_classifier, get_train_test_data
-from utils.db_utils import get_database, name_id_map, activity_set_1
+from utils.db_utils import get_database, name_id_map, activity_set_1, activity_set_2
 from random import shuffle
 import numpy as np
 import pickle
 
 
 # Define the model name.
-model_name = "as1_fs1_diff_hands"
-description = "Classify activities in activity set 1 using feature set 1.\n" \
-              "This model is for users with the watch on their non-dominant hand"
+model_name = "as2_fs1_same_hands"
+description = "Classify activities in activity set 2 using feature set 1.\n" \
+              "This model is for users with the watch on their dominant hand"
 
 # Define the activities to classify.
-activity_ids = [name_id_map[activity] for activity in activity_set_1]
+activity_ids = [name_id_map[activity] for activity in activity_set_2]
 
 database_conn = get_database()
 cursor = database_conn.cursor()
@@ -21,7 +21,7 @@ cursor = database_conn.cursor()
 cursor.execute("""
                 SELECT "meanXYZ", "stdXYZ", activity_id
                 FROM public."Featureset_1" fs1, public."Target" target, public."Participant" ptct, public."Trial" trial
-                WHERE ptct.dom_hand != ptct.watch_hand
+                WHERE ptct.dom_hand = ptct.watch_hand
                 AND trial.participant_id = ptct.id
                 AND trial.id = fs1.trial_id
                 AND trial.id = target.trial_id
@@ -54,12 +54,12 @@ if model is None:
     print("Best classifier is: {}, with accuracy {}".format(classifier.__class__.__name__, accuracy))
 
     # Plot the confusion matrix of the best performing.
-    cnf_matrix = plot_confusion(classifier, activity_set_1, x_test, y_test,
+    cnf_matrix = plot_confusion(classifier, activity_set_2, x_test, y_test,
                                 title="Confusion Matrix for Dominant Hand")
 
     # Calculate the accuracies for each activity.
     accuracies = dict()
-    for index, activity in enumerate(activity_set_1):
+    for index, activity in enumerate(activity_set_2):
         accuracies[activity] = (cnf_matrix[index][index] / sum(cnf_matrix[index]) * 100)
 
     # Encode the model's meta-data.

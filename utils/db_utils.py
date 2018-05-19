@@ -40,3 +40,5 @@ name_id_map = {
 
 activity_set_1 = ["Walking", "Jogging", "Cycling", "Writing", "Typing", "Sitting",
                   "Standing", "On Phone (sit)", "On Phone (stand)"]
+
+activity_set_2 = ["Walking", "Jogging", "Cycling", "Writing", "Typing", "Idle"]

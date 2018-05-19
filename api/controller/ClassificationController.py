@@ -60,7 +60,7 @@ def classify(acceleration_data, model_name):
     predictions = classifier.predict(features)
 
     return_values = []
-    if model_name.startswith("as1"):
+    if model_name.startswith("as1") or model_name.startswith("as2"):
         for activity_id, time_interval in zip(predictions, time_intervals):
             # Get the model's accuracy for the target.
             accuracy = accuracies[name_id_map[activity_id]]
