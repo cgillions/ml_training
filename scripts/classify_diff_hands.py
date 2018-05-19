@@ -1,4 +1,5 @@
-from scripts.analysis import get_train_test_data, plot_confusion, get_best_classifier
+from scripts.analysis import get_train_test_data, plot_confusion, get_best_classifier, get_trained_classifiers, \
+    get_accuracy
 from utils.db_utils import get_database
 from random import shuffle
 import numpy as np
@@ -51,21 +52,32 @@ cursor.execute("""
                 WHERE name = %s;
                 """, (model_name,))
 
-model = cursor.fetchone()
+model = None # cursor.fetchone()
 if model is None:
-    # Get the best classifier for these features.
-    classifier, accuracy = get_best_classifier(x_train, x_test, y_train, y_test)
+    # Train the classifiers.
+    trained_classifiers = get_trained_classifiers(x_train, y_train)
 
-    # Print result.
-    print("Best classifier is: {}, with accuracy {}".format(classifier.__class__.__name__, accuracy))
+    # Measure their accuracies using the testing data.
+    accuracies = [get_accuracy(classifier, x_test, y_test) for classifier in trained_classifiers]
+
+    # Print the accuracies of each algorithm.
+    for classifier, accuracy in zip(trained_classifiers, accuracies):
+        print("{} is {}% accurate".format(classifier.__class__.__name__, accuracy))
+
+    # Get the best classifier for these features.
+    classifier, accuracy = trained_classifiers[accuracies.index(max(accuracies))], max(accuracies)
 
     # Plot the confusion matrix of the best performing.
     cnf_matrix = plot_confusion(classifier, ["Diff", "Same"], x_test, y_test,
-                                title="Confusion Matrix for different hands")
+                                title="Confusion Matrix for dominant = watch hand")
 
     # Calculate the accuracies for left and right handed users.
     diff_accuracy = cnf_matrix[0][0] / sum(cnf_matrix[0]) * 100
     same_accuracy = cnf_matrix[1][1] / sum(cnf_matrix[1]) * 100
+
+    # Print result.
+    print("Best classifier is: {}, with {}% total accuracy.\nSame hands: {}%\nDiff hands: {}%"
+          .format(classifier.__class__.__name__, accuracy, same_accuracy, diff_accuracy))
 
     cnf_encoded = pickle.dumps(cnf_matrix)
     classifier_encoded = pickle.dumps(classifier)

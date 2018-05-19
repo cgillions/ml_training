@@ -1,4 +1,5 @@
-from scripts.analysis import get_train_test_data, plot_confusion, get_best_classifier
+from scripts.analysis import get_train_test_data, plot_confusion, get_best_classifier, get_trained_classifiers, \
+    get_accuracy
 from utils.db_utils import get_database, LEFT_TARGET, RIGHT_TARGET
 from random import shuffle
 import numpy as np
@@ -32,10 +33,20 @@ cursor.execute("""
                 WHERE name = %s;
                 """, ("dom_hand",))
 
-model = cursor.fetchone()
+model = None  # cursor.fetchone()
 if model is None:
+    # Train the classifiers.
+    trained_classifiers = get_trained_classifiers(x_train, y_train)
+
+    # Measure their accuracies using the testing data.
+    accuracies = [get_accuracy(classifier, x_test, y_test) for classifier in trained_classifiers]
+
+    # Print the accuracies of each algorithm.
+    for classifier, accuracy in zip(trained_classifiers, accuracies):
+        print("{} is {}% accurate".format(classifier.__class__.__name__, accuracy))
+
     # Get the best classifier for these features.
-    classifier, accuracy = get_best_classifier(x_train, x_test, y_train, y_test)
+    classifier, accuracy = trained_classifiers[accuracies.index(max(accuracies))], max(accuracies)
 
     # Print result.
     print("Best classifier is: {}, with accuracy {}".format(classifier.__class__.__name__, accuracy))
