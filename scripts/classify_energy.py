@@ -2,7 +2,7 @@ import pickle
 from random import shuffle
 
 from scripts.analysis import get_features, get_train_test_data, get_trained_classifiers, get_accuracy, plot_confusion
-from utils.db_utils import get_database
+from utils.db_utils import get_database, name_id_map
 
 model_name = "energy_fs1"
 description = "Classifies the user's energy level"
@@ -31,7 +31,7 @@ def script():
     activities = ["Walking", "Jogging", "Cycling", "Writing", "Typing", "Sitting",
                   "Standing", "On Phone (sit)", "On Phone (stand)"]
 
-    activity_ids = [energy_id_map[activity] for activity in activities]
+    activity_ids = [name_id_map[activity] for activity in activities]
 
     targets = ["Idle", "Low", "Medium", "High"]
 
@@ -47,6 +47,10 @@ def script():
 
     # Split the features into training and testing.
     x_train, x_test, y_train, y_test = get_train_test_data(features, range(0, 6), 6)
+
+    # Update the target values.
+    y_train = [energy_id_map[name_id_map[activity_id]] for activity_id in y_train]
+    y_test = [energy_id_map[name_id_map[activity_id]] for activity_id in y_test]
 
     # Train the classifiers.
     trained_classifiers = get_trained_classifiers(x_train, y_train)
