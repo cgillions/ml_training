@@ -6,7 +6,9 @@ import pickle
 
 
 # Define the model name.
-model_name = "as1_fs1_same_hands"
+model_name = "as1_fs1_diff_hands"
+description = "Classify activities in activity set 1 using feature set 1.\n" \
+              "This model is for users with the watch on their non-dominant hand"
 
 # Define the activities to classify.
 activity_ids = [name_id_map[activity] for activity in activity_set_1]
@@ -19,7 +21,7 @@ cursor = database_conn.cursor()
 cursor.execute("""
                 SELECT "meanXYZ", "stdXYZ", activity_id
                 FROM public."Featureset_1" fs1, public."Target" target, public."Participant" ptct, public."Trial" trial
-                WHERE ptct.dom_hand = ptct.watch_hand
+                WHERE ptct.dom_hand != ptct.watch_hand
                 AND trial.participant_id = ptct.id
                 AND trial.id = fs1.trial_id
                 AND trial.id = target.trial_id
@@ -43,7 +45,7 @@ cursor.execute("""
                 WHERE name = %s;
                 """, (model_name,))
 
-model = cursor.fetchone()
+model = None # cursor.fetchone()
 if model is None:
     # Get the best classifier for these features.
     classifier, accuracy = get_best_classifier(x_train, x_test, y_train, y_test)
@@ -67,13 +69,13 @@ if model is None:
 
     cursor.execute("""
                     INSERT INTO
-                    public."Model" (data, name, target_accuracies, confusion_matrix)
-                    VALUES (%s, %s, %s, %s)
+                    public."Model" (data, name, description, target_accuracies, confusion_matrix)
+                    VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (name) DO UPDATE
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, model_name,
+                    """, (classifier_encoded, model_name, description,
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,

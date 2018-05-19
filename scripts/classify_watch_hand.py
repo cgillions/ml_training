@@ -5,6 +5,11 @@ from random import shuffle
 import numpy as np
 import pickle
 
+
+model_name = "watch_hand"
+description = "Classifies the hand the watch is on"
+
+
 database_conn = get_database()
 cursor = database_conn.cursor()
 
@@ -31,7 +36,7 @@ cursor.execute("""
                 SELECT data
                 FROM public."Model"
                 WHERE name = %s;
-                """, ("watch_hand",))
+                """, (model_name,))
 
 model = None # cursor.fetchone()
 if model is None:
@@ -68,13 +73,13 @@ if model is None:
 
     cursor.execute("""
                     INSERT INTO
-                    public."Model" (data, name, target_accuracies, confusion_matrix)
-                    VALUES (%s, %s, %s, %s)
+                    public."Model" (data, name, description, target_accuracies, confusion_matrix)
+                    VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (name) DO UPDATE
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, "watch_hand",
+                    """, (classifier_encoded, model_name, description,
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,

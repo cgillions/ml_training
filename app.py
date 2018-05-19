@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 @app.route("/classify", methods=["POST"])
 def classify():
-    return ClassificationController.classify(request.form.get("acceleration"), request.form.get("diff_hands"))
+    return ClassificationController.classify(request.form.get("acceleration"), request.form.get("model_name"))
 
 
 @app.route("/activities", methods=["GET"])
@@ -96,7 +96,6 @@ def participants():
 
 @app.route("/models", methods=["GET"])
 def models():
-    print("Made it to models.")
     return ModelController.get()
 
 

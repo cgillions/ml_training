@@ -8,13 +8,13 @@ def get():
     database_conn = get_database()
     cursor = database_conn.cursor()
     cursor.execute("""
-                        SELECT identifier, description 
+                        SELECT name, description 
                         FROM public."Model"
                         """)
 
     for model in cursor.fetchall():
-        models.append({"identifier": model[0], "description": model[1]})
+        models.append({"name": model[0], "description": model[1]})
 
     cursor.close()
     database_conn.close()
-    return jsonify({"activities": models})
+    return jsonify({"models": models})

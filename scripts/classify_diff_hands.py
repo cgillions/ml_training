@@ -8,6 +8,7 @@ import pickle
 
 # Define the model name.
 model_name = "fs1_diff_hands"
+description = "Classifies whether the watch is on the user's dominant hand."
 
 database_conn = get_database()
 cursor = database_conn.cursor()
@@ -85,13 +86,13 @@ if model is None:
 
     cursor.execute("""
                     INSERT INTO
-                    public."Model" (data, name, target_accuracies, confusion_matrix)
-                    VALUES (%s, %s, %s, %s)
+                    public."Model" (data, name, description, target_accuracies, confusion_matrix)
+                    VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (name) DO UPDATE
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, model_name,
+                    """, (classifier_encoded, model_name, description,
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,

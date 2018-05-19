@@ -1,7 +1,11 @@
+import pickle
 from random import shuffle
 
 from scripts.analysis import get_features, get_train_test_data, get_trained_classifiers, get_accuracy, plot_confusion
 from utils.db_utils import get_database
+
+model_name = "energy_fs1"
+description = "Classifies the user's energy level"
 
 energy_id_map = {
     10: "Idle",
@@ -37,10 +41,6 @@ def script():
 
     # Get the features relating to these activities.
     features = get_features(cursor, activity_ids)
-
-    # Close the database connections.
-    cursor.close()
-    database_conn.close()
 
     # Shuffle the features to distribute them more randomly between users and trials.
     shuffle(features)
@@ -78,6 +78,35 @@ def script():
 
     # Plot the confusion matrix of the best performing.
     plot_confusion(classifier, targets, x_test, y_test)
+
+    idle_accuracy = conf_matrix[0][0] / sum(conf_matrix[0]) * 100
+    low_accuracy = conf_matrix[1][1] / sum(conf_matrix[1]) * 100
+    med_accuracy = conf_matrix[2][2] / sum(conf_matrix[2]) * 100
+    high_accuracy = conf_matrix[3][3] / sum(conf_matrix[3]) * 100
+
+    cnf_encoded = pickle.dumps(conf_matrix)
+    classifier_encoded = pickle.dumps(classifier)
+    accuracies_encoded = pickle.dumps({"Idle": idle_accuracy, "Low": low_accuracy, "Medium": med_accuracy, "High": high_accuracy})
+
+    cursor.execute("""
+                        INSERT INTO
+                        public."Model" (data, name, description, target_accuracies, confusion_matrix)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (name) DO UPDATE
+                        SET data = %s,
+                        target_accuracies = %s,
+                        confusion_matrix = %s;
+                        """, (classifier_encoded, model_name, description,
+                              accuracies_encoded,
+                              cnf_encoded,
+                              classifier_encoded,
+                              accuracies_encoded,
+                              cnf_encoded))
+    database_conn.commit()
+
+    # Close the database connections.
+    cursor.close()
+    database_conn.close()
 
 
 # Run the script.

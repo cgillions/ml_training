@@ -1,7 +1,8 @@
 from api.model.activity import Activity
+from scripts.classify_energy import energy_id_map
 from utils.classification_utils import BIN_SIZE
 from utils.response_utils import error
-from utils.db_utils import get_database, name_id_map
+from utils.db_utils import get_database, name_id_map, LEFT_TARGET
 from python_speech_features import mfcc
 from flask import jsonify
 import numpy as np
@@ -10,9 +11,12 @@ import pickle
 FEATURE_SET = 1
 
 
-def classify(acceleration_data, diff_hands):
+def classify(acceleration_data, model_name):
     if acceleration_data is None:
-        return error("Acceleration data not provided.", "Post accelerometer data in the request.")
+        return error("Acceleration data not provided.", "Post acceleration data in the request.")
+
+    if model_name is None:
+        return error("Model name not provided.", "Post model_name in the request to dynamically select a model.")
 
     # Get the features from the data.
     features, time_intervals = get_features(acceleration_data, FEATURE_SET)
@@ -21,61 +25,12 @@ def classify(acceleration_data, diff_hands):
     database_conn = get_database()
     cursor = database_conn.cursor()
 
-    response = None
-    if FEATURE_SET == 1:
-
-        # Work out the dominant / watch hand configuration.
-        if diff_hands is None:
-            cursor.execute("""
-                            SELECT data
-                            FROM public."Model"
-                            WHERE name = %s;
-                            """, ("fs1_diff_hands",))
-
-            model_data = cursor.fetchone()[0]
-            classifier = pickle.loads(model_data)
-
-            # Classify whether the user's dominant hand is different to their watch hand.
-            diff_hands = classifier.predict(features)
-
-            # Use the mean predicted configuration.
-            diff_hands = sum(diff_hands) > (len(diff_hands) / 2)
-
-        # Load the suitable activity classifier.
-        cursor.execute("""
-                        SELECT data, target_accuracies
-                        FROM public."Model"
-                        WHERE name = %s;
-                        """, ("as1_fs1_{}_hands".format("diff" if diff_hands == 1 else "same"),))
-
-        response = cursor.fetchone()
-
-    if FEATURE_SET == 2:
-
-        # Work out the dominant / watch hand configuration.
-        if diff_hands is None:
-            cursor.execute("""
-                            SELECT data
-                            FROM public."Model"
-                            WHERE name = %s;
-                            """, ("fs2_diff_hands",))
-
-            model_data = cursor.fetchone()[0]
-            classifier = pickle.loads(model_data)
-
-            # Classify whether the user's dominant hand is different to their watch hand.
-            diff_hands = classifier.predict(features)
-
-            # Use the mean predicted configuration.
-            diff_hands = sum(diff_hands) > (len(diff_hands) / 2)
-        # Load the suitable activity classifier.
-        cursor.execute("""
-                        SELECT data, target_accuracies
-                        FROM public."Model"
-                        WHERE name = %s;
-                        """, ("{}_hand_activity_set_1_fs2".format("diff" if diff_hands == 1 else "same"),))
-
-        response = cursor.fetchone()
+    cursor.execute("""
+                    SELECT data, target_accuracies
+                    FROM public."Model"
+                    WHERE name = %s;
+                    """, (model_name,))
+    response = cursor.fetchone()
 
     # Decode the response.
     classifier = pickle.loads(response[0])
@@ -86,28 +41,53 @@ def classify(acceleration_data, diff_hands):
     database_conn.close()
 
     # Predict the activities.
-    activity_ids = classifier.predict(features)
+    predictions = classifier.predict(features)
 
-    # Create wrapper objects to store attribute name meta-data.
-    activities = []
-    for activity_id, time_interval in zip(activity_ids, time_intervals):
+    return_values = []
+    if model_name.startswith("as1"):
+        for activity_id, time_interval in zip(predictions, time_intervals):
+            # Get the model's accuracy for the target.
+            accuracy = accuracies[name_id_map[activity_id]]
 
-        # Get the model's accuracy for the target.
-        accuracy = accuracies[name_id_map[activity_id]]
-
-        # Create a wrapper object.
-        activity = Activity(
+            # Create a wrapper object.
+            activity = Activity(
                 int(activity_id),
                 name_id_map[activity_id],
                 time_interval[0],
                 time_interval[1],
                 accuracy)
 
-        # Add a key-value dictionary representation.
-        activities.append(activity.__dict__)
+            # Add a key-value dictionary representation.
+            return_values.append(activity.__dict__)
+
+    if model_name.startswith("energy"):
+        for energy_id, time_interval in zip(predictions, time_intervals):
+            # Get the confidence score.
+            accuracy = accuracies[energy_id_map[energy_id]]
+
+            # Append the data.
+            return_values.append({"id": int(energy_id),
+                                  "name": energy_id_map[energy_id],
+                                  "start_time": time_interval[0],
+                                  "end_time": time_interval[1],
+                                  "confidence": accuracy})
+
+    if model_name.startswith("watch_hand"):
+        for hand_id, time_interval in zip(predictions, time_intervals):
+            hand = "left" if hand_id == LEFT_TARGET else "right"
+
+            # Get the confidence score.
+            accuracy = accuracies[hand]
+
+            # Append the data.
+            return_values.append({"id": int(hand_id),
+                                  "name": hand,
+                                  "start_time": time_interval[0],
+                                  "end_time": time_interval[1],
+                                  "confidence": accuracy})
 
     # Return the activities in json.
-    return jsonify({"activities": activities, "diff_hands": "true" if diff_hands else "false"})
+    return jsonify({"predictions": return_values})
 
 
 def get_features(acceleration_data, featureset):

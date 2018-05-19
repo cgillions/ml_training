@@ -7,6 +7,7 @@ import pickle
 
 # Define the name of the model.
 model_name = "as1_fs1"
+description = "Classify activities in activity set 1 using feature set 1"
 
 # Define the activities to classify.
 activity_ids = [name_id_map[activity] for activity in activity_set_1]
@@ -40,7 +41,7 @@ cursor.execute("""
                 WHERE name = %s;
                 """, (model_name,))
 
-model = cursor.fetchone()
+model = None # cursor.fetchone()
 if model is None:
     # Get the best classifier for these features.
     classifier, accuracy = get_best_classifier(x_train, x_test, y_train, y_test)
@@ -64,13 +65,13 @@ if model is None:
 
     cursor.execute("""
                     INSERT INTO
-                    public."Model" (data, name, target_accuracies, confusion_matrix)
-                    VALUES (%s, %s, %s, %s)
+                    public."Model" (data, name, description, target_accuracies, confusion_matrix)
+                    VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (name) DO UPDATE
                     SET data = %s,
                     target_accuracies = %s,
                     confusion_matrix = %s;
-                    """, (classifier_encoded, model_name,
+                    """, (classifier_encoded, model_name, description,
                           accuracies_encoded,
                           cnf_encoded,
                           classifier_encoded,
