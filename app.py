@@ -1,9 +1,5 @@
-from api.controller import ClassificationController as ClassificationController, \
-                           Featureset1Controller as Featureset1Controller, \
-                           ParticipantController as ParticipantController, \
-                           ActivityController as ActivityController, \
-                           TrialController as TrialController, \
-                           UserController as UserController
+from api.controller import ClassificationController, Featureset1Controller, ParticipantController, \
+                           ActivityController, TrialController, UserController, ModelController
 
 from utils.response_utils import error
 from api.model.user import User
@@ -96,6 +92,11 @@ def participants():
                     request.form.get("gender"))
     else:
         return ParticipantController.get(request.args.get("id"))
+
+
+@app.route("/models", methods=["GET"])
+def models():
+    return ModelController.get()
 
 
 if __name__ == "__main__":
