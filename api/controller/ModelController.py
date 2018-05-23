@@ -8,9 +8,10 @@ def get():
     database_conn = get_database()
     cursor = database_conn.cursor()
     cursor.execute("""
-                        SELECT name, description 
-                        FROM public."Model"
-                        """)
+                    SELECT name, description 
+                    FROM public."Model"
+                    ORDER BY name ASC;
+                    """)
 
     for model in cursor.fetchall():
         models.append({"name": model[0], "description": model[1]})
